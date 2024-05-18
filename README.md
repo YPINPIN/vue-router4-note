@@ -10,7 +10,7 @@
 
 ### 1. 基於 Vite 創建新專案
 
-在環境安裝時選擇添加使用 Vue-Router 即可。
+在環境安裝時選擇添加使用 Vue Router 即可。
 
 ```bash
 npm create vue@latest
@@ -169,3 +169,62 @@ Vue Router 提供了 `<router-link>` 及 `<router-view>` 兩個全域註冊的�
 ### 5. 運行專案結果
 
 ![router-1.gif](./images/gif/router-1.gif)
+
+## 操作存取路由
+
+在組件中我們可以透過幾個方法獲取路由實例和當前路由資料。
+
+### 1. `<template>` 模板中
+
+在組件模板中可以透過 `$router`、`$route` 操作存取路由。
+
+- `$router` -> 路由實例，可以用來進行動態的路由操作。
+
+- `$route` -> 包含當前路由資料的物件
+
+About.vue 模板中操作存取路由：
+
+```vue
+<template>
+  <h2>About page</h2>
+  <hr />
+  <h3>Current Route Information</h3>
+  <p>Path: {{ $route.path }}</p>
+  <p>Path: {{ $route.name }}</p>
+
+  <button @click="$router.push('/')">Back to Home</button>
+</template>
+```
+
+![router-2.gif](./images/gif/router-2.gif)
+
+### 2. `<script setup>` 中
+
+在 `<script setup>` 中則可以透過使用 `useRouter()`、`useRoute()` 來執行相同的功能。
+
+- `useRouter()` -> 獲取路由實例，可以用來進行動態的路由操作。
+
+- `useRoute()` -> 返回包含當前路由資料的物件
+
+Home.vue `<script setup>` 中操作存取路由：
+
+```vue
+<script setup>
+import { useRouter, useRoute } from 'vue-router';
+
+const router = useRouter();
+const route = useRoute();
+</script>
+
+<template>
+  <h2>Home page</h2>
+  <hr />
+  <h3>Current Route Information</h3>
+  <p>Path: {{ route.path }}</p>
+  <p>Name: {{ route.name }}</p>
+
+  <button @click="router.push('/about')">Go to About</button>
+</template>
+```
+
+![router-3.gif](./images/gif/router-3.gif)
