@@ -22,6 +22,8 @@
 
   - [使用自定義正則表達式](#使用自定義正則表達式)
 
+- [命名路由](#命名路由)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -510,3 +512,87 @@ const route = useRoute();
 #### § 路由的進階匹配語法
 
 更多的匹配語法可以查看此[官方文檔](https://router.vuejs.org/zh/guide/essentials/route-matching-syntax.html)。
+
+## 命名路由
+
+當設置路由規則時，可以為路由提供 `name` 選項(可選)，**`name` 值必須為唯一值**，若多個路由設定相同的 `name` 值，將只會保留最後一條的設定。
+
+路由規則設置 `name`：
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // 設置 name
+  {
+    path: '/users/:userId',
+    name: 'User',
+    component: () => import('@/views/User.vue'),
+  },
+];
+
+//...
+```
+
+連結到指定的命名路由：
+
+可以使用以下兩種方法連結到有命名的路由。
+
+- `<router-link>` 組件的 `to` 屬性：
+
+  可以向 `<router-link>` 組件 `to` 屬性傳遞一個物件，物件內設定 `name` 屬性為指定路由的名稱，也可以設定 `params` 傳遞指定動態參數。
+
+  ```vue
+  <template>
+    <!-- 省略前面 -->
+
+    <nav>
+      <!-- 省略前面 -->
+      <router-link :to="{ name: 'User', params: { userId: '1' } }"
+        >Go to User 1</router-link
+      >
+      |
+      <router-link :to="{ name: 'User', params: { userId: '2' } }"
+        >Go to User 2</router-link
+      >
+      |
+      <!-- 省略 -->
+    </nav>
+
+    <main>
+      <router-view />
+    </main>
+  </template>
+  ```
+
+- 在 `<script setup>` 內操作路由：
+
+  ```vue
+  <script setup>
+  import { useRouter } from 'vue-router';
+
+  const router = useRouter();
+
+  function goToUser3() {
+    router.push({ name: 'User', params: { userId: '3' } });
+  }
+  </script>
+
+  <template>
+    <!-- 省略前面 -->
+
+    <nav>
+      <!-- 省略前面 -->
+      <button @click="goToUser3">Go to User 3</button> |
+      <!-- 省略 -->
+    </nav>
+
+    <main>
+      <router-view />
+    </main>
+  </template>
+  ```
+
+![router-9.gif](./images/gif/router-9.gif)
