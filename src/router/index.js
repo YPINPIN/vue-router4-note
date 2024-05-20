@@ -15,6 +15,28 @@ const routes = [
     // 動態導入(懶加載)
     component: () => import('@/views/About.vue'),
   },
+  {
+    path: '/users/:userId',
+    name: 'User',
+    component: () => import('@/views/User.vue'),
+  },
+  {
+    path: '/users/:userId/posts/:postId',
+    name: 'UserPost',
+    component: () => import('@/views/UserPost.vue'),
+  },
+  // 設置 404 NotFound 頁面
+  {
+    path: '/:pathMatch(.*)',
+    name: 'NotFound',
+    component: () => import('@/views/NotFound.vue'),
+  },
+  // 匹配 /user-開頭的路由地址，後面的值傳入 afterUser
+  {
+    path: '/user-:afterUser(.*)',
+    name: 'UserOther',
+    component: () => import('@/views/UserOther.vue'),
+  },
 ];
 
 // 創建路由實例
