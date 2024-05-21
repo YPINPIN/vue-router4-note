@@ -18,4 +18,15 @@ onBeforeRouteUpdate((to, from) => {
   <h2>User page</h2>
   <hr />
   <p>UserId: {{ route.params.userId }}</p>
+
+  <section class="info_wrapper">
+    <router-view />
+  </section>
 </template>
+
+<style scoped>
+.info_wrapper {
+  border: 1px solid black;
+  padding: 10px;
+}
+</style>

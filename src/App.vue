@@ -25,7 +25,12 @@ function goToUser3() {
     |
     <button @click="goToUser3">Go to User 3</button> |
     <router-link to="/users/1/posts/1">Go to User 1 Post 1</router-link> |
-    <router-link to="/users/1/posts/2">Go to User 1 Post 2</router-link>
+    <router-link to="/users/1/posts/2">Go to User 1 Post 2</router-link> |
+    <router-link to="/users/1/profile">Go to User 1 Profile</router-link> |
+    <router-link to="/users/1/posts">Go to User 1 Posts</router-link> |
+    <router-link to="/admin">Go to AdminOverview</router-link> |
+    <router-link to="/admin/users">Go to AdminUserList</router-link> |
+    <router-link to="/admin/users/1">Go to AdminUserDetails 1</router-link>
   </nav>
 
   <main>

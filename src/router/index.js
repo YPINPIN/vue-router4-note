@@ -15,15 +15,60 @@ const routes = [
     // 動態導入(懶加載)
     component: () => import('@/views/About.vue'),
   },
+  // 巢狀路由
   {
     path: '/users/:userId',
-    name: 'User',
     component: () => import('@/views/User.vue'),
+    // 命名設置在子路由
+    children: [
+      {
+        // 當 /user/:userId 時匹配成功
+        path: '',
+        name: 'User',
+        component: () => import('@/views/UserHome.vue'),
+      },
+      {
+        // 當 /user/:userId/profile 時匹配成功
+        path: 'profile',
+        name: 'UserProfile',
+        component: () => import('@/views/UserProfile.vue'),
+      },
+      {
+        // 當 /user/:userId/posts 時匹配成功
+        path: 'posts',
+        name: 'UserPosts',
+        component: () => import('@/views/UserPosts.vue'),
+      },
+    ],
   },
   {
     path: '/users/:userId/posts/:postId',
     name: 'UserPost',
     component: () => import('@/views/UserPost.vue'),
+  },
+  // 設置共用的路徑前綴
+  {
+    path: '/admin',
+    children: [
+      {
+        // 當 /admin 時匹配成功
+        path: '',
+        name: 'AdminOverview',
+        component: () => import('@/views/AdminOverview.vue'),
+      },
+      {
+        // 當 /admin/users 時匹配成功
+        path: 'users',
+        name: 'AdminUserList',
+        component: () => import('@/views/AdminUserList.vue'),
+      },
+      {
+        // 當 /admin/users/:id 時匹配成功
+        path: 'users/:id',
+        name: 'AdminUserDetails',
+        component: () => import('@/views/AdminUserDetails.vue'),
+      },
+    ],
   },
   // 設置 404 NotFound 頁面
   {

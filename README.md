@@ -24,6 +24,8 @@
 
 - [命名路由](#命名路由)
 
+- [巢狀路由](#巢狀路由)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -596,3 +598,211 @@ const routes = [
   ```
 
 ![router-9.gif](./images/gif/router-9.gif)
+
+## 巢狀路由
+
+當應用的 UI 由多層的組件組成，通常會需要對應的巢狀結構。例如：`/user/1/profile`、`/user/1/posts`，需要在 User 組件內分別顯示 Profile 和 Posts 組件。
+
+![圖片07](./images/07.PNG)
+
+### 基本設定
+
+#### § 1. 添加巢狀路由配置 (router/index.js)
+
+在對應路由中透過添加 `children` 來設定對應的巢狀路由。
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // 設置 children
+  {
+    path: '/users/:userId',
+    name: 'User',
+    component: () => import('@/views/User.vue'),
+    children: [
+      {
+        // 當 /user/:userId/profile 時匹配成功
+        path: 'profile',
+        name: 'UserProfile',
+        component: () => import('@/views/UserProfile.vue'),
+      },
+      {
+        // 當 /user/:userId/posts 時匹配成功
+        path: 'posts',
+        name: 'UserPosts',
+        component: () => import('@/views/UserPosts.vue'),
+      },
+    ],
+  },
+];
+
+//...
+```
+
+> 注意：若巢狀路由以 `/` 開頭，則代表以**根路徑為上層**，這樣可以讓你使用組件嵌套但不需要使用上層組件的 url。
+
+設置頁面 UserProfile.vue：
+
+```vue
+<template>
+  <h3>User {{ $route.params.userId }} Profile</h3>
+</template>
+```
+
+設置頁面 UserPosts.vue：
+
+```vue
+<template>
+  <h3>User {{ $route.params.userId }} Posts</h3>
+</template>
+```
+
+#### § 2. 組件內添加巢狀路由顯示 (User.vue)
+
+User 組件內可以新添加自己的 `<router-view>` 組件來渲染對應巢狀路由的組件。
+
+```vue
+<!-- 省略前面 -->
+<template>
+  <h2>User page</h2>
+  <hr />
+  <p>UserId: {{ route.params.userId }}</p>
+
+  <section class="info_wrapper">
+    <router-view />
+  </section>
+</template>
+
+<style scoped>
+.info_wrapper {
+  border: 1px solid black;
+  padding: 10px;
+}
+</style>
+```
+
+#### § 3. 設置路由切換 (App.vue)
+
+```vue
+<template>
+  <!-- 省略前面 -->
+
+  <nav>
+    <!-- 省略前面 -->
+    <router-link to="/users/1/profile">Go to User 1 Profile</router-link> |
+    <router-link to="/users/1/posts">Go to User 1 Posts</router-link>
+  </nav>
+
+  <main>
+    <router-view />
+  </main>
+</template>
+```
+
+渲染結果：
+
+![router-10.gif](./images/gif/router-10.gif)
+
+#### § 4. 巢狀路由陣列添加空路徑匹配
+
+此時可以發現訪問 `/users/1` 時，在 User 的 `<router-view>` 內甚麼都不會顯示，這是因為沒有匹配到對應的巢狀路由，如果想要在 `/users/1` 也渲染一些東西，可以設置一個空的巢狀路由來匹配。
+
+**另外需要注意通常巢狀路由的命名都會設置在子路由，這將確保 `/users/:userId` 永遠會顯示對應的巢狀路由。**
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  {
+    path: '/users/:userId',
+    component: () => import('@/views/User.vue'),
+    // 命名設置在子路由
+    children: [
+      {
+        // 當 /user/:userId 時匹配成功
+        path: '',
+        name: 'User',
+        component: () => import('@/views/UserHome.vue'),
+      },
+      {
+        // 當 /user/:userId/profile 時匹配成功
+        path: 'profile',
+        name: 'UserProfile',
+        component: () => import('@/views/UserProfile.vue'),
+      },
+      {
+        // 當 /user/:userId/posts 時匹配成功
+        path: 'posts',
+        name: 'UserPosts',
+        component: () => import('@/views/UserPosts.vue'),
+      },
+    ],
+  },
+];
+
+//...
+```
+
+設置頁面 UserHome.vue：
+
+```vue
+<template>
+  <h3>User {{ $route.params.userId }} Home</h3>
+</template>
+```
+
+渲染結果：
+
+![router-11.gif](./images/gif/router-11.gif)
+
+---
+
+### 省略嵌套父組件 (版本 4.1+)
+
+也可以透過**省略嵌套父組件( `component` )的設定，使巢狀路由變成共用的路徑前綴**，方便進行路徑分組或其他更進階的功能。
+
+此時因為未設定嵌套的父組件，因此上一層的 `<router-view>` 會直接以子路由設定的組件替代顯示。
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // 設置共用的路徑前綴
+  {
+    path: '/admin',
+    children: [
+      {
+        // 當 /admin 時匹配成功
+        path: '',
+        name: 'AdminOverview',
+        component: () => import('@/views/AdminOverview.vue'),
+      },
+      {
+        // 當 /admin/users 時匹配成功
+        path: 'users',
+        name: 'AdminUserList',
+        component: () => import('@/views/AdminUserList.vue'),
+      },
+      {
+        // 當 /admin/users/:id 時匹配成功
+        path: 'users/:id',
+        name: 'AdminUserDetails',
+        component: () => import('@/views/AdminUserDetails.vue'),
+      },
+    ],
+  },
+];
+
+//...
+```
+
+渲染結果：
+
+![router-12.gif](./images/gif/router-12.gif)
