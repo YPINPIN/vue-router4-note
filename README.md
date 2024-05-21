@@ -26,6 +26,8 @@
 
 - [巢狀路由](#巢狀路由)
 
+- [編程式導航](#編程式導航)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -822,3 +824,183 @@ const routes = [
 渲染結果：
 
 ![router-12.gif](./images/gif/router-12.gif)
+
+## 編程式導航
+
+除了使用 `<router-link>` 創建 a 標籤來定義導航連結，還可以使用 `router` 的實例方法來進行編程式導航。
+
+以下的範例中的 `router` 皆指代路由器實例，在 `<script setup>` 中則可以通過調用 `useRouter()` 來取得路由器實例。
+
+### 導航到不同的位置
+
+想要導航到不同的 url，可以使用 `router.push` 方法，這個方法會向 `history stack` 添加新的紀錄，因此當使用者點擊瀏覽器的返回鍵時，會回到之前的 url。
+
+一般點擊 `<router-link :to="...">` 的連結時，內部也是調用 `router.push(...)`。而 `push` 方法的參數跟 `<router-link>` 的 `to` 屬性一樣，可以是**一個字串路徑或是一個描述地址的物件**。
+
+```vue
+<script setup>
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+// 編程式導航
+function goToUser4() {
+  // 字串路徑
+  router.push('/users/4');
+}
+function goToUser5() {
+  // 帶有路徑 (path) 的物件
+  router.push({ path: '/users/5' });
+}
+function goToUser6() {
+  // 使用命名路由，並透過 params 添加參數
+  router.push({ name: 'User', params: { userId: '6' } });
+}
+function goToAboutWithQuery() {
+  // 透過 query 添加查詢參數，結果為 /about?plan=private
+  router.push({ path: '/about', query: { plan: 'private' } });
+}
+function goToAboutWithHash() {
+  // 帶 hash，結果為 /about#team
+  router.push({ path: '/about', hash: '#team' });
+}
+</script>
+
+<template>
+  <!-- 省略前面 -->
+
+  <section>
+    <p>Programmatic Navigation</p>
+    <button @click="goToUser4">Go to User 4</button> |
+    <button @click="goToUser5">Go to User 5</button> |
+    <button @click="goToUser6">Go to User 6</button> |
+    <button @click="goToAboutWithQuery">Go to About With Query</button> |
+    <button @click="goToAboutWithHash">Go to About With Hash</button>
+  </section>
+
+  <main>
+    <router-view />
+  </main>
+</template>
+```
+
+渲染結果：
+
+![router-13.gif](./images/gif/router-13.gif)
+
+需要特別注意 **`path` 和 `params` 不能同時使用，如果設置了 `path`，`params` 會被忽略**，而 `query` 則不會，因此需要使用命名路由，或是手寫完整帶有參數的 `path`。
+
+```javascript
+const userId = '1';
+// 手動自己拼接完整的參數 url -> /users/1
+router.push(`/users/${userId}`);
+// 使用 path ，結果與上方一樣
+router.push({ path: `/users/${userId}` });
+
+// 使用命名路由 name 搭配 params -> /users/1
+router.push({ name: 'User', params: { userId } });
+// path 和 params不能同時使用，會忽略 params -> /users
+router.push({ path: '/users', params: { userId } });
+```
+
+當指定 `params` 時，可以提供 `string` 或是 `number` 類型的參數 (或者對於 **"可重複的參數"** 可以提供一個陣列)，而提供任何其他類型 (物件、布林等等) 都將被**自動字串化**，而對於**可選參數**則可以提供一個空字串 (`""`) 或 `null` 來移除它。
+
+而 `router.push` 和其他導航方法都會返回一個 `Promise`，讓我們可以等到導航完成後才知道是否成功，以便進行額外的操作( [Navigation Handling](https://router.vuejs.org/zh/guide/advanced/navigation-failures.html) 中會詳細說明)。
+
+> 補充資料：
+> [可重複參數](https://router.vuejs.org/zh/guide/essentials/route-matching-syntax.html#%E5%8F%AF%E9%87%8D%E5%A4%8D%E7%9A%84%E5%8F%82%E6%95%B0)、[可選參數](https://router.vuejs.org/zh/guide/essentials/route-matching-syntax.html#%E5%8F%AF%E9%80%89%E5%8F%82%E6%95%B0)。
+
+---
+
+### 替換當前位置
+
+使用 `router.replace` 方法，類似於 `router.push`，但是它不會向 `history stack` 添加新紀錄，而是**直接取代當前的 `history` 紀錄，因此按返回鍵將不會回到當前頁面**。
+
+當 `<router-link>` 設置了 `replace` 時，點擊 `<router-link :to="..." replace>` 的連結，內部會調用`router.replace(...)`。
+
+另外也可以直接在傳遞給 `router.push` 的參數中增加一個屬性 `replace: true`。
+
+```vue
+<script setup>
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+// 省略...
+// 替換當前位置
+function goToHomeReplace() {
+  // router.push({ path: '/', replace: true });
+  // 相當於
+  router.replace({ path: '/' });
+}
+</script>
+
+<template>
+  <!-- 省略前面 -->
+
+  <section>
+    <p>Programmatic Navigation</p>
+    <!-- 省略前面 -->
+    <button @click="goToHomeReplace">Go to Home (replace)</button>
+  </section>
+
+  <main>
+    <router-view />
+  </main>
+</template>
+```
+
+渲染結果：
+
+![router-14.gif](./images/gif/router-14.gif)
+
+---
+
+### 跨越 history
+
+`router.go` 方法將接收一個整數作為參數，表示在 `history stack` 中前進或後退多少步，類似於 `window.history.go(n)`。
+
+```vue
+<script setup>
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+// 省略...
+// 跨越 history
+function forward() {
+  // 向前移動一條紀錄，與 router.forward() 相同
+  router.go(1);
+}
+function back() {
+  // 返回一條紀錄，與 router.back() 相同
+  router.go(-1);
+}
+function goTo(n) {
+  // 如果沒有那麼多的紀錄，會靜默失敗
+  router.go(n);
+}
+</script>
+
+<template>
+  <!-- 省略前面 -->
+
+  <section>
+    <p>Programmatic Navigation</p>
+    <!-- 省略前面 -->
+    <button @click="forward">forward</button> |
+    <button @click="back">back</button> |
+    <button @click="goTo(3)">forward 3</button> |
+    <button @click="goTo(-100)">back 100</button> |
+    <button @click="goTo(100)">forward 100</button>
+  </section>
+
+  <main>
+    <router-view />
+  </main>
+</template>
+```
+
+渲染結果：
+
+![router-15.gif](./images/gif/router-15.gif)
