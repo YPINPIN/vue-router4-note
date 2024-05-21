@@ -216,6 +216,8 @@ About.vue 模板中操作存取路由：
 </template>
 ```
 
+渲染結果：
+
 ![router-2.gif](./images/gif/router-2.gif)
 
 ### 2. `<script setup>` 中
@@ -246,6 +248,8 @@ const route = useRoute();
   <button @click="router.push('/about')">Go to About</button>
 </template>
 ```
+
+渲染結果：
 
 ![router-3.gif](./images/gif/router-3.gif)
 
@@ -323,6 +327,8 @@ watch(
 </template>
 ```
 
+渲染結果：
+
 ![router-4.gif](./images/gif/router-4.gif)
 
 > 需要注意的是，當動態參數路由切換從 /users/1 跳轉至 /users/2 時，**會複用 User 的組件實例並不會進行銷毀，因此生命週期鉤子將不會被再次調用**，若需要獲取 `route` 的變化可以透過 `watch` 來實現 (上面的範例)。
@@ -354,6 +360,8 @@ onBeforeRouteUpdate((to, from) => {
   <p>UserId: {{ route.params.userId }}</p>
 </template>
 ```
+
+渲染結果：
 
 ![router-5.gif](./images/gif/router-5.gif)
 
@@ -408,6 +416,8 @@ const routes = [
   </h3>
 </template>
 ```
+
+渲染結果：
 
 ![router-6.gif](./images/gif/router-6.gif)
 
@@ -467,6 +477,8 @@ const route = useRoute();
 </template>
 ```
 
+渲染結果：
+
 ![router-7.gif](./images/gif/router-7.gif)
 
 #### § 匹配指定名稱開頭的路由
@@ -508,6 +520,8 @@ const route = useRoute();
   <p>afterUser value: {{ route.params.afterUser }}</p>
 </template>
 ```
+
+渲染結果：
 
 ![router-8.gif](./images/gif/router-8.gif)
 
@@ -596,6 +610,8 @@ const routes = [
     </main>
   </template>
   ```
+
+渲染結果：
 
 ![router-9.gif](./images/gif/router-9.gif)
 
