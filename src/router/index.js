@@ -70,6 +70,33 @@ const routes = [
       },
     ],
   },
+  // 設置命名視圖
+  {
+    path: '/settings',
+    name: 'Settings',
+    components: {
+      default: () => import('@/views/Settings.vue'),
+      sidebar: () => import('@/views/SettingNav.vue'),
+    },
+    // 巢狀路由
+    children: [
+      {
+        path: 'email',
+        name: 'SettingEmail',
+        // 顯示 default 視圖
+        component: () => import('@/views/SettingEmail.vue'),
+      },
+      {
+        path: 'profile',
+        name: 'SettingProfile',
+        // 多個視圖顯示
+        components: {
+          default: () => import('@/views/SettingProfile.vue'),
+          helper: () => import('@/views/SettingHelper.vue'),
+        },
+      },
+    ],
+  },
   // 設置 404 NotFound 頁面
   {
     path: '/:pathMatch(.*)',

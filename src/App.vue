@@ -71,7 +71,8 @@ function goTo(n) {
     <router-link to="/users/1/posts">Go to User 1 Posts</router-link> |
     <router-link to="/admin">Go to AdminOverview</router-link> |
     <router-link to="/admin/users">Go to AdminUserList</router-link> |
-    <router-link to="/admin/users/1">Go to AdminUserDetails 1</router-link>
+    <router-link to="/admin/users/1">Go to AdminUserDetails 1</router-link> |
+    <router-link to="/settings">Go to Settings</router-link>
   </nav>
 
   <section>
@@ -89,7 +90,22 @@ function goTo(n) {
     <button @click="goTo(100)">forward 100</button>
   </section>
 
-  <main>
-    <router-view />
-  </main>
+  <section class="content">
+    <div>
+      <!-- 命名視圖 -->
+      <router-view name="sidebar" />
+    </div>
+    <main>
+      <router-view />
+    </main>
+  </section>
 </template>
+
+<style scoped>
+.content {
+  display: flex;
+}
+main {
+  flex: 1;
+}
+</style>

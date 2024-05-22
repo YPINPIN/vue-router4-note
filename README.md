@@ -1004,3 +1004,244 @@ function goTo(n) {
 渲染結果：
 
 ![router-15.gif](./images/gif/router-15.gif)
+
+## 命名視圖
+
+有時會需要同時 (同層) 顯示多個視圖，而不是嵌套視圖。例如創建一個布局，有 sidebar (側邊導航)、main (主內容)，**這時候就可以添加多個 `<router-view>` 組件，並為其指定名稱**，若沒有設定名稱則預設名稱為 `default`。
+
+### 基本設定
+
+#### § 1. 新增命名視圖顯示 (App.vue)
+
+```vue
+<template>
+  <!-- 省略前面 -->
+
+  <nav>
+    <!-- 省略前面 -->
+    <router-link to="/settings">Go to Settings</router-link>
+  </nav>
+
+  <!-- 省略 -->
+
+  <section class="content">
+    <div>
+      <!-- 命名視圖 -->
+      <router-view name="sidebar" />
+    </div>
+    <main>
+      <router-view />
+    </main>
+  </section>
+</template>
+
+<style scoped>
+.content {
+  display: flex;
+}
+main {
+  flex: 1;
+}
+</style>
+```
+
+#### § 2. 路由配置 (router/index.js)
+
+一個 `<router-view>` 使用一個組件渲染，因此在路由配置時，需要使用 `components` 設定視圖對應的組件 (與 `<router-view>` 上的 `name` 屬性匹配)。
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // 設置命名視圖
+  {
+    path: '/settings',
+    name: 'Settings',
+    components: {
+      default: () => import('@/views/Settings.vue'),
+      sidebar: () => import('@/views/SettingNav.vue'),
+    },
+  },
+  // ...
+];
+
+//...
+```
+
+設置頁面 Settings.vue：
+
+```vue
+<template>
+  <h3>Settings</h3>
+</template>
+```
+
+設置頁面 SettingNav.vue：
+
+```vue
+<template>
+  <div class="sidebar">
+    <h3>SettingNav</h3>
+  </div>
+</template>
+
+<style scoped>
+.sidebar {
+  margin-top: 10px;
+  margin-right: 10px;
+  padding: 10px;
+  border: 1px solid black;
+  min-height: 50vh;
+}
+</style>
+```
+
+渲染結果：
+
+![router-16.gif](./images/gif/router-16.gif)
+
+---
+
+### 搭配巢狀路由
+
+當需要複雜的布局時，例如巢狀路由內需要顯示不同的一個或多個視圖，也可以兩者搭配使用。
+
+#### § 1. 新增巢狀視圖顯示 (Settings.vue)
+
+```vue
+<template>
+  <h3>Settings</h3>
+  <router-view />
+  <!-- 命名視圖 -->
+  <router-view name="helper" />
+</template>
+```
+
+#### § 2. 設置連結 (SettingNav.vue)
+
+```vue
+<template>
+  <div class="sidebar">
+    <h3>SettingNav</h3>
+    <router-link to="/settings/email">email</router-link>
+    <router-link to="/settings/profile">profile</router-link>
+  </div>
+</template>
+
+<style scoped>
+.sidebar {
+  margin-top: 10px;
+  margin-right: 10px;
+  padding: 10px;
+  border: 1px solid black;
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+}
+</style>
+```
+
+#### § 3. 巢狀路由命名視圖配置 (router/index.js)
+
+在子路由中一樣使用 `components` 指定視圖對應組件即可。
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // 設置命名視圖
+  {
+    path: '/settings',
+    name: 'Settings',
+    components: {
+      default: () => import('@/views/Settings.vue'),
+      sidebar: () => import('@/views/SettingNav.vue'),
+    },
+    // 巢狀路由
+    children: [
+      {
+        path: 'email',
+        name: 'SettingEmail',
+        // 顯示 default 視圖
+        component: () => import('@/views/SettingEmail.vue'),
+      },
+      {
+        path: 'profile',
+        name: 'SettingProfile',
+        // 多個視圖顯示
+        components: {
+          default: () => import('@/views/SettingProfile.vue'),
+          helper: () => import('@/views/SettingHelper.vue'),
+        },
+      },
+    ],
+  },
+  // ...
+];
+
+//...
+```
+
+設置頁面 SettingEmail.vue：
+
+```vue
+<template>
+  <div class="wrapper">
+    <h3>SettingEmail</h3>
+  </div>
+</template>
+
+<style scoped>
+.wrapper {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid black;
+  min-height: 30vh;
+}
+</style>
+```
+
+設置頁面 SettingProfile.vue：
+
+```vue
+<template>
+  <div class="wrapper">
+    <h3>SettingProfile</h3>
+  </div>
+</template>
+
+<style scoped>
+.wrapper {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid black;
+  min-height: 30vh;
+}
+</style>
+```
+
+設置頁面 SettingHelper.vue：
+
+```vue
+<template>
+  <div class="helper">
+    <h3>SettingHelper</h3>
+  </div>
+</template>
+
+<style scoped>
+.helper {
+  min-height: 10vh;
+  padding: 10px;
+  background-color: lightblue;
+}
+</style>
+```
+
+渲染結果：
+
+![router-17.gif](./images/gif/router-17.gif)
