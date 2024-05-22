@@ -1,7 +1,19 @@
 <script setup>
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { useHead } from '@unhead/vue';
 
 const router = useRouter();
+const route = useRoute();
+
+// 設置 canonical URL
+useHead({
+  link: () => [
+    {
+      rel: 'canonical',
+      href: `${window.location.origin}${route.path}`,
+    },
+  ],
+});
 
 function goToUser3() {
   router.push({ name: 'User', params: { userId: '3' } });

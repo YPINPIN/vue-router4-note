@@ -1523,3 +1523,89 @@ const routes = [
 渲染結果：
 
 ![router-22.gif](./images/gif/router-22.gif)
+
+#### § 關於 SEO 的注意事項
+
+使用別名時，建議要定義標準網址 [canonical URL](https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls?visit_id=638476681905676047-2189358708&rd=1&hl=zh-tw)。
+
+> 補充文章：[Blog1](https://welly.tw/blog/what-is-canonical-url)、[Blog2](https://www.awoo.ai/zh-hant/blog/canonical-seo/)、[github](https://github.com/vuejs/vue-router/issues/3869)、[@vueuse/head](https://github.com/vueuse/head?tab=readme-ov-file#api)。
+
+以下範例參考上面的補充說明使用 [`@unhead/vue`](https://unhead.unjs.io/setup/vue/installation) 設置 canonical URL。
+
+- 1.安裝 `@unhead/vue`：
+
+  ```bash
+  npm install @unhead/vue
+  ```
+
+- 2.使用 Plugin (main.js)：
+
+  ```javascript
+  import { createApp } from 'vue';
+  import App from './App.vue';
+  import router from './router';
+  import { createHead } from '@unhead/vue';
+
+  const app = createApp(App);
+
+  app.use(router);
+
+  const head = createHead();
+  app.use(head);
+
+  app.mount('#app');
+  ```
+
+- 3.App.vue 使用 `useHead` 組合式函數設置所有的 canonical URL：
+
+  ```vue
+  <script setup>
+  import { useRoute, useRouter } from 'vue-router';
+  import { useHead } from '@unhead/vue';
+
+  const router = useRouter();
+  const route = useRoute();
+
+  // 設置 canonical URL
+  useHead({
+    link: () => [
+      {
+        rel: 'canonical',
+        href: `${window.location.origin}${route.path}`,
+      },
+    ],
+  });
+
+  // 省略...
+  </script>
+  ```
+
+- 4.可以在單一頁面中使用 `useHead` 設置指定的標準網址 (PhotoDetail.vue)：
+
+  ```vue
+  <script setup>
+  import { useRoute } from 'vue-router';
+  import { useHead } from '@unhead/vue';
+
+  const route = useRoute();
+
+  // 設置 canonical URL
+  useHead({
+    link: () => [
+      {
+        rel: 'canonical',
+        href: `${window.location.origin}/photo/${route.params.id}`,
+      },
+    ],
+  });
+  </script>
+
+  <template>
+    <h3>PhotoDetail</h3>
+    <p>photoId: {{ $route.params.id }}</p>
+  </template>
+  ```
+
+渲染結果：
+
+![router-23.gif](./images/gif/router-23.gif)
