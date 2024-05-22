@@ -8,6 +8,36 @@ const routes = [
     path: '/',
     name: 'Home',
     component: Home,
+    // 設置別名
+    alias: '/home2',
+  },
+  // 設置重新導向
+  {
+    path: '/home',
+    redirect: '/',
+    // 也可以使用命名路由
+    // redirect: { name: 'Home' },
+  },
+  // 指定一個方法動態返回重新導向的目標
+  {
+    // /search/screens 重新導向 /search?q=screens
+    path: '/search/:searchText',
+    // 方法會接收目標路由 to 作為參數
+    redirect: (to) => {
+      // 返回重新導向的路由地址或是一個描述地址的物件
+      return { path: '/search', query: { q: to.params.searchText } };
+    },
+  },
+  {
+    path: '/search',
+    name: 'Search',
+    component: () => import('@/views/Search.vue'),
+  },
+  // 相對位置重新導向 (不建議使用)
+  {
+    // /info 重新導向到 /about
+    path: '/info',
+    redirect: 'about',
   },
   {
     path: '/about',
@@ -94,6 +124,23 @@ const routes = [
           default: () => import('@/views/SettingProfile.vue'),
           helper: () => import('@/views/SettingHelper.vue'),
         },
+      },
+    ],
+  },
+  // 設置多個別名
+  {
+    // :id 必須為數字
+    path: '/photo/:id(\\d+)',
+    component: () => import('@/views/PhotoLayout.vue'),
+    children: [
+      {
+        // 將匹配 3 個 url
+        // /photo/1
+        // /photo/1/detail
+        // /photo-1
+        path: '',
+        component: () => import('@/views/PhotoDetail.vue'),
+        alias: ['detail', '/photo-:id(\\d+)'],
       },
     ],
   },

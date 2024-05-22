@@ -30,6 +30,8 @@
 
 - [命名視圖](#命名視圖)
 
+- [重新導向和別名](#重新導向和別名)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -1247,3 +1249,277 @@ const routes = [
 渲染結果：
 
 ![router-17.gif](./images/gif/router-17.gif)
+
+## 重新導向和別名
+
+### 重新導向 redirect
+
+可以通過路由配置來將，匹配的路由導向其他目標路由。例如：將 `/home` 重新導向到 `/`。
+
+需要注意的是**導航守衛並不會應用在跳轉路由上**，因此在跳轉路由( `/home` )中添加 `beforeEnter` 守衛不會有任何效果。
+
+#### § 1. 直接指定路由地址
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  {
+    path: '/',
+    name: 'Home',
+    component: Home,
+  },
+  // 設置重新導向
+  {
+    path: '/home',
+    redirect: '/',
+    // 也可以使用命名路由
+    // redirect: { name: 'Home' },
+  },
+  // ...
+];
+
+//...
+```
+
+渲染結果：
+
+![router-18.gif](./images/gif/router-18.gif)
+
+#### § 2. 指定一個方法動態返回重新導向的目標
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  // ...
+  // 指定一個方法動態返回重新導向的目標
+  {
+    // /search/screens 重新導向 /search?q=screens
+    path: '/search/:searchText',
+    // 方法會接收目標路由 to 作為參數
+    redirect: (to) => {
+      // 返回重新導向的路由地址或是一個描述地址的物件
+      return { path: '/search', query: { q: to.params.searchText } };
+    },
+  },
+  {
+    path: '/search',
+    name: 'Search',
+    component: () => import('@/views/Search.vue'),
+  },
+  // ...
+];
+
+//...
+```
+
+設置頁面 Search.vue：
+
+```vue
+<script setup>
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+</script>
+
+<template>
+  <h2>Search page</h2>
+  <hr />
+  <p>Query: {{ route.query }}</p>
+</template>
+```
+
+渲染結果：
+
+![router-19.gif](./images/gif/router-19.gif)
+
+#### § 3. 相對位置重新導向 (不建議使用)
+
+重新導向的路由地址不使用 `/` 開頭時，**會相對當前 url 地址的位置重新導向**。
+
+以下範例設置 `/info` 正常操作可以重新導向到 `/about`，但是當在錯誤的 url 層級操作時則會導致導向不符合預期，因此**建議使用絕對路由地址或是命名路由**明確重新導向的位置。
+
+設置路由配置 (router/index.js)：
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  // ...
+  // 相對位置重新導向 (不建議使用)
+  {
+    // /info 重新導向到 /about
+    path: '/info',
+    redirect: 'about',
+  },
+  {
+    path: '/about',
+    name: 'About',
+    component: () => import('@/views/About.vue'),
+  },
+  // ...
+];
+
+//...
+```
+
+設置路由切換 (App.vue)：
+
+```vue
+<template>
+  <!-- 省略前面 -->
+
+  <nav>
+    <!-- 省略前面 -->
+    <router-link to="/info">Go to info</router-link>
+  </nav>
+
+  <main>
+    <router-view />
+  </main>
+</template>
+```
+
+渲染結果：
+
+可以看到不同的操作可能會導致錯誤的重新導向。
+
+> 可以查看 [github](https://github.com/vuejs/router/issues/2014) 上成員針對相對位置重新導向可能導致的問題的回覆。
+
+![router-20.gif](./images/gif/router-20.gif)
+
+---
+
+### 別名 alias
+
+通過在路由配置中設定別名 `alias`，可以自由的將 UI 結構對應到一個任意的 url，而不需要受嵌套結構的限制。
+
+與重新導向的差別：
+
+`redirect` 是指當使用者訪問 `/home` 時，url 會被 `/` 替換並匹配路由。
+
+而 `alias` 則是將 `/` 別名設置為 `/home2`，當訪問 `/home2` 時，url 仍然是 `/home2`，但是會被匹配為 `/` 的路由設置。
+
+設置路由配置 (router/index.js)：
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  {
+    path: '/',
+    name: 'Home',
+    component: Home,
+    // 設置別名
+    alias: '/home2',
+  },
+  // 設置重新導向
+  {
+    path: '/home',
+    redirect: '/',
+  },
+  // ...
+];
+
+//...
+```
+
+渲染結果：
+
+可以看到兩者使用的差別。
+
+![router-21.gif](./images/gif/router-21.gif)
+
+#### § 進階使用
+
+- 在巢狀路由中設置別名時，若以 `/` 開頭，**可以使路由地址變為絕對路徑**。
+
+- 另外也可以透過**陣列設置多個別名**。
+
+- 若路由有動態參數，**則在絕對路經中需要確保包含動態參數**。
+
+設置路由配置 (router/index.js)：
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  // ...
+  // 設置多個別名
+  {
+    // :id 必須為數字
+    path: '/photo/:id(\\d+)',
+    component: () => import('@/views/PhotoLayout.vue'),
+    children: [
+      {
+        // 將匹配 3 個 url
+        // /photo/1
+        // /photo/1/detail
+        // /photo-1
+        path: '',
+        component: () => import('@/views/PhotoDetail.vue'),
+        alias: ['detail', '/photo-:id(\\d+)'],
+      },
+    ],
+  },
+  // ...
+];
+
+//...
+```
+
+設置頁面 PhotoLayout.vue：
+
+```vue
+<template>
+  <h3>PhotoLayout</h3>
+  <div class="layout">
+    <router-view />
+  </div>
+</template>
+
+<style scoped>
+.layout {
+  padding: 10px;
+  background-color: lightgoldenrodyellow;
+}
+</style>
+```
+
+設置頁面 PhotoDetail.vue：
+
+```vue
+<template>
+  <h3>PhotoDetail</h3>
+  <p>photoId: {{ $route.params.id }}</p>
+</template>
+```
+
+設置路由切換 (App.vue)：
+
+```vue
+<template>
+  <!-- 省略前面 -->
+
+  <nav>
+    <!-- 省略前面 -->
+    <router-link to="/photo/2">Go to /photo/2</router-link> |
+    <router-link to="/photo/6/detail">Go to /photo/6/detail</router-link> |
+    <router-link to="/photo-12">Go to /photo-12</router-link>
+  </nav>
+
+  <main>
+    <router-view />
+  </main>
+</template>
+```
+
+渲染結果：
+
+![router-22.gif](./images/gif/router-22.gif)

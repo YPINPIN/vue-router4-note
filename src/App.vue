@@ -72,7 +72,11 @@ function goTo(n) {
     <router-link to="/admin">Go to AdminOverview</router-link> |
     <router-link to="/admin/users">Go to AdminUserList</router-link> |
     <router-link to="/admin/users/1">Go to AdminUserDetails 1</router-link> |
-    <router-link to="/settings">Go to Settings</router-link>
+    <router-link to="/settings">Go to Settings</router-link> |
+    <router-link to="/info">Go to info</router-link> |
+    <router-link to="/photo/2">Go to /photo/2</router-link> |
+    <router-link to="/photo/6/detail">Go to /photo/6/detail</router-link> |
+    <router-link to="/photo-12">Go to /photo-12</router-link>
   </nav>
 
   <section>
