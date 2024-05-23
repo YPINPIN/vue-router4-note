@@ -34,6 +34,8 @@
 
 - [傳遞 props 給路由組件](#傳遞-props-給路由組件)
 
+- [Active links](#active-links)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -1902,3 +1904,272 @@ const props = defineProps({
   <!-- 省略 -->
 </template>
 ```
+
+## Active links
+
+通常應用中會具有使用多個 `<router-link>` 組件形成的導航清單，而 `<router-link>` 提供了 `router-link-active` 以及 `router-link-exact-active` 兩個 CSS class 方便設置 active links 的樣式。
+
+### 連結何時 active
+
+active 狀態時會添加 `router-link-active` class。
+
+在以下情況下，`<router-link>` 被視為處於 active 狀態：
+
+- 它匹配與目前 url 相同的路由配置
+
+- `params` 具有與目前 url 相同的值，不考慮其他路由屬性，例如 `query`
+
+- 使用巢狀路由時，如果相關的 `params` 匹配，則任何指向祖先路由的連結也將被視為 active 狀態。
+
+- 路徑不一定需要完美匹配，使用別名 ( `alias` ) 也會視為匹配，只要能對應到相同的路由配置和 `params`。
+
+- 如果路由設置了 `redirect` 屬性，則檢查連結是否處於 active 狀態時會忽略該路由。
+
+#### § 設置路由 active 樣式 (App.vue)：
+
+```vue
+<!-- 省略 -->
+<!-- 添加連結樣式 -->
+<style>
+a {
+  color: darkblue;
+}
+.router-link-active {
+  color: lightcoral;
+}
+.router-link-exact-active {
+  color: red;
+}
+</style>
+```
+
+渲染結果：
+
+可以看到連結會根據 active 狀態顯示對應的樣式。
+
+![router-28.gif](./images/gif/router-28.gif)
+
+---
+
+### 精確的 active 連結 (Exact active links)
+
+精確匹配的連結會添加 `router-link-exact-active` class，**但是精確匹配不包括祖先路由**。
+
+#### § 範例
+
+路由配置 (router/index.js)：
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  // ...
+  // 路由 active 狀態範例
+  {
+    path: '/students/:name',
+    name: 'Students',
+    component: () => import('@/views/Students.vue'),
+    children: [
+      {
+        path: 'works/:workId',
+        name: 'StudentWork',
+        component: () => import('@/views/StudentWork.vue'),
+      },
+    ],
+  },
+  // ...
+];
+
+//...
+```
+
+設置頁面 Students.vue：
+
+```vue
+<template>
+  <h3>Students name: {{ $route.params.name }}</h3>
+  <section class="wrapper">
+    <div class="sidebar">
+      <h3>Work Nav</h3>
+      <router-link :to="`/students/${$route.params.name}/works/1`"
+        >work 1</router-link
+      >
+      <router-link :to="`/students/${$route.params.name}/works/2`"
+        >work 2</router-link
+      >
+    </div>
+    <div class="content">
+      <router-view />
+    </div>
+  </section>
+</template>
+
+<style scoped>
+.wrapper {
+  margin-top: 10px;
+  display: flex;
+  min-height: 20vh;
+}
+.sidebar {
+  margin-right: 10px;
+  padding: 10px;
+  border: 1px solid black;
+  display: flex;
+  flex-direction: column;
+}
+.content {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid black;
+  background-color: lightseagreen;
+}
+</style>
+```
+
+設置頁面 StudentWork.vue：
+
+```vue
+<template>
+  <h3>StudentWork</h3>
+  <p>workId: {{ $route.params.workId }}</p>
+</template>
+```
+
+設置路由切換 (App.vue)：
+
+```vue
+<template>
+  <!-- 省略前面 -->
+
+  <nav>
+    <!-- 省略前面 -->
+    <router-link to="/students/123">Go to /students/123</router-link> |
+    <router-link to="/students/456">Go to /students/456</router-link>
+  </nav>
+
+  <!-- 省略 -->
+</template>
+
+<!-- 省略 -->
+```
+
+渲染結果：
+
+以上範例中，當當前 url 路徑為 `/students/123/works/1` 時，App.vue (`/students/123`) 及 Students.vue (`/students/123/works/1`) 的兩個連結都將被視為 active 狀態，因此 `router-link-active` 會應用到兩個連結上。
+
+但只有 Students.vue (`/students/123/works/1`) 的連結會被認為是精確的，因此 `router-link-exact-active` 只會應用到此連結。
+
+![router-29.gif](./images/gif/router-29.gif)
+
+---
+
+### 配置 active class 名稱
+
+#### § 1.修改指定連結的 active class
+
+`<router-link>` 組件具有 `active-class` 和 `exact-active-class` 兩個屬性，可以用來變更套用 active 狀態的 class 名稱。
+
+Students.vue：
+
+```vue
+<template>
+  <h3>Students name: {{ $route.params.name }}</h3>
+  <section class="wrapper">
+    <div class="sidebar">
+      <h3>Work Nav</h3>
+      <router-link
+        :to="`/students/${$route.params.name}/works/1`"
+        active-class="link-active-green"
+        exact-active-class="link-exact-active-green"
+        >work 1</router-link
+      >
+      <router-link
+        :to="`/students/${$route.params.name}/works/2`"
+        active-class="link-active-green"
+        exact-active-class="link-exact-active-green"
+        >work 2</router-link
+      >
+    </div>
+    <div class="content">
+      <router-view />
+    </div>
+  </section>
+</template>
+
+<!-- 省略 -->
+```
+
+App.vue：
+
+```vue
+<template>
+  <!-- 省略前面 -->
+
+  <nav>
+    <!-- 省略前面 -->
+    <router-link
+      to="/students/123"
+      active-class="link-active-green"
+      exact-active-class="link-exact-active-green"
+      >Go to /students/123</router-link
+    >
+    |
+    <router-link
+      to="/students/456"
+      active-class="link-active-green"
+      exact-active-class="link-exact-active-green"
+      >Go to /students/456</router-link
+    >
+  </nav>
+
+  <!-- 省略 -->
+</template>
+
+<!-- 省略 -->
+<style>
+/* 省略 */
+/* 添加指定連結樣式 */
+.link-active-green {
+  color: lightseagreen;
+}
+.link-exact-active-green {
+  color: green;
+}
+</style>
+```
+
+渲染結果：
+
+現在可以看到 active 狀態套用的 class 為指定的名稱。
+
+![router-30.gif](./images/gif/router-30.gif)
+
+#### § 2.全域更改預設 active class
+
+也可以透過將 `linkActiveClass` 和 `linkExactActiveClass` 選項傳遞給 `createRouter()` 來全域更改預設 active class 名稱。
+
+全域更改 active class 名稱 (router/index.js)：
+
+```javascript
+//...
+
+// 創建路由實例
+const router = createRouter({
+  // 指定模式
+  history: createWebHistory(import.meta.env.BASE_URL),
+  // 設定前面配置的路由
+  routes,
+  // 指定 active class
+  linkActiveClass: 'link-active-green',
+  linkExactActiveClass: 'link-exact-active-green',
+});
+
+//...
+```
+
+渲染結果：
+
+現在全部的連結樣式都被修改。
+
+![router-31.gif](./images/gif/router-31.gif)

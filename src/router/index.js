@@ -193,6 +193,19 @@ const routes = [
       isFind: true,
     }),
   },
+  // 路由 active 狀態範例
+  {
+    path: '/students/:name',
+    name: 'Students',
+    component: () => import('@/views/Students.vue'),
+    children: [
+      {
+        path: 'works/:workId',
+        name: 'StudentWork',
+        component: () => import('@/views/StudentWork.vue'),
+      },
+    ],
+  },
   // 設置 404 NotFound 頁面
   {
     path: '/:pathMatch(.*)',
@@ -213,6 +226,9 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   // 設定前面配置的路由
   routes,
+  // 指定 active class
+  // linkActiveClass: 'link-active-green',
+  // linkExactActiveClass: 'link-exact-active-green',
 });
 
 // 共享路由實例

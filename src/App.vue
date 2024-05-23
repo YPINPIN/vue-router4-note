@@ -81,10 +81,15 @@ function goTo(n) {
     <router-link to="/users/1/posts/2">Go to User 1 Post 2</router-link> |
     <router-link to="/users/1/profile">Go to User 1 Profile</router-link> |
     <router-link to="/users/1/posts">Go to User 1 Posts</router-link> |
+    <router-link to="/users/2/profile">Go to User 2 Profile</router-link> |
+    <router-link to="/users/2/posts">Go to User 2 Posts</router-link> |
     <router-link to="/admin">Go to AdminOverview</router-link> |
     <router-link to="/admin/users">Go to AdminUserList</router-link> |
     <router-link to="/admin/users/1">Go to AdminUserDetails 1</router-link> |
     <router-link to="/settings">Go to Settings</router-link> |
+    <router-link to="/home">Go to /home</router-link> |
+    <router-link to="/home2">Go to /home2</router-link> |
+    <router-link to="/search/book">Go to /search/book</router-link> |
     <router-link to="/info">Go to info</router-link> |
     <router-link to="/photo/2">Go to /photo/2</router-link> |
     <router-link to="/photo/6/detail">Go to /photo/6/detail</router-link> |
@@ -98,6 +103,20 @@ function goTo(n) {
     <router-link to="/find?t=vue&c=book">Go to /find?t=vue&c=book</router-link>
     |
     <router-link to="/find?t=ps5&c=game">Go to /find?t=ps5&c=game</router-link>
+    |
+    <router-link
+      to="/students/123"
+      active-class="link-active-green"
+      exact-active-class="link-exact-active-green"
+      >Go to /students/123</router-link
+    >
+    |
+    <router-link
+      to="/students/456"
+      active-class="link-active-green"
+      exact-active-class="link-exact-active-green"
+      >Go to /students/456</router-link
+    >
   </nav>
 
   <section>
@@ -132,5 +151,25 @@ function goTo(n) {
 }
 main {
   flex: 1;
+}
+</style>
+
+<!-- 添加連結樣式 -->
+<style>
+a {
+  color: darkblue;
+}
+.router-link-active {
+  color: lightcoral;
+}
+.router-link-exact-active {
+  color: red;
+}
+/* 添加指定連結樣式 */
+.link-active-green {
+  color: lightseagreen;
+}
+.link-exact-active-green {
+  color: green;
 }
 </style>
