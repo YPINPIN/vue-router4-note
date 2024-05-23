@@ -88,7 +88,16 @@ function goTo(n) {
     <router-link to="/info">Go to info</router-link> |
     <router-link to="/photo/2">Go to /photo/2</router-link> |
     <router-link to="/photo/6/detail">Go to /photo/6/detail</router-link> |
-    <router-link to="/photo-12">Go to /photo-12</router-link>
+    <router-link to="/photo-12">Go to /photo-12</router-link> |
+    <router-link to="/products/1">Go to /products/1</router-link> |
+    <router-link to="/products/2">Go to /products/2</router-link> |
+    <router-link to="/products2/1">Go to /products2/1</router-link> |
+    <router-link to="/products2/2">Go to /products2/2</router-link> |
+    <router-link to="/products">Go to /products</router-link> |
+    <router-link to="/products2">Go to /products2</router-link> |
+    <router-link to="/find?t=vue&c=book">Go to /find?t=vue&c=book</router-link>
+    |
+    <router-link to="/find?t=ps5&c=game">Go to /find?t=ps5&c=game</router-link>
   </nav>
 
   <section>

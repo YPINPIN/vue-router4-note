@@ -139,10 +139,59 @@ const routes = [
         // /photo/1/detail
         // /photo-1
         path: '',
+        name: 'PhotoDetail',
         component: () => import('@/views/PhotoDetail.vue'),
         alias: ['detail', '/photo-:id(\\d+)'],
       },
     ],
+  },
+  // 設置 props - 布林模式
+  {
+    path: '/products/:id',
+    name: 'ProductDetail',
+    component: () => import('@/views/ProductDetail.vue'),
+    props: true,
+  },
+  {
+    path: '/products2/:id',
+    name: 'ProductWithNav',
+    components: {
+      default: () => import('@/views/ProductDetail.vue'),
+      sidebar: () => import('@/views/ProductNav.vue'),
+    },
+    // 多個視圖定義 props
+    props: { default: true, sidebar: false },
+  },
+  // 設置 props - 物件模式
+  {
+    path: '/products',
+    name: 'Products',
+    component: () => import('@/views/ProductDetail.vue'),
+    // 傳入靜態資料
+    props: { id: '100' },
+  },
+  {
+    path: '/products2',
+    name: 'Products2',
+    components: {
+      default: () => import('@/views/ProductDetail.vue'),
+      sidebar: () => import('@/views/ProductNav.vue'),
+    },
+    // 多個視圖定義 props
+    props: { default: { id: '200' }, sidebar: false },
+  },
+  // 設置 props - 函數模式
+  {
+    // /find?t=vue&c=book
+    // 將 { title: "vue", category: "book", isFind: true } 作為 props 傳遞給組件
+    path: '/find',
+    name: 'ProductFind',
+    component: () => import('@/views/ProductFind.vue'),
+    props: (route) => ({
+      title: route.query.t,
+      category: route.query.c,
+      isFind: true,
+    }),
   },
   // 設置 404 NotFound 頁面
   {

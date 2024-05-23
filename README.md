@@ -32,6 +32,8 @@
 
 - [重新導向和別名](#重新導向和別名)
 
+- [傳遞 props 給路由組件](#傳遞-props-給路由組件)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -1254,7 +1256,7 @@ const routes = [
 
 ### 重新導向 redirect
 
-可以通過路由配置來將，匹配的路由導向其他目標路由。例如：將 `/home` 重新導向到 `/`。
+可以通過路由配置來將匹配的路由導向其他目標路由。例如：將 `/home` 重新導向到 `/`。
 
 需要注意的是**導航守衛並不會應用在跳轉路由上**，因此在跳轉路由( `/home` )中添加 `beforeEnter` 守衛不會有任何效果。
 
@@ -1378,9 +1380,7 @@ const routes = [
     <router-link to="/info">Go to info</router-link>
   </nav>
 
-  <main>
-    <router-view />
-  </main>
+  <!-- 省略 -->
 </template>
 ```
 
@@ -1463,6 +1463,7 @@ const routes = [
         // /photo/1/detail
         // /photo-1
         path: '',
+        name: 'PhotoDetail',
         component: () => import('@/views/PhotoDetail.vue'),
         alias: ['detail', '/photo-:id(\\d+)'],
       },
@@ -1514,9 +1515,7 @@ const routes = [
     <router-link to="/photo-12">Go to /photo-12</router-link>
   </nav>
 
-  <main>
-    <router-view />
-  </main>
+  <!-- 省略 -->
 </template>
 ```
 
@@ -1609,3 +1608,297 @@ const routes = [
 渲染結果：
 
 ![router-23.gif](./images/gif/router-23.gif)
+
+## 傳遞 props 給路由組件
+
+在組件中使用 `$route` 和 `useRoute()` 會**造成組件與路由的高耦合**，限制組件的靈活性，因為它只能用於特定的 url。
+
+如以下範例，`ProductDetail` 組件使用了 `$route.params.id` 來獲取 id，因此必須綁定對應的路由地址 ( `/products/:id` ) 來使用。
+
+路由配置 (router/index.js)：
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  // ...
+  {
+    path: '/products/:id',
+    name: 'ProductDetail',
+    component: () => import('@/views/ProductDetail.vue'),
+  },
+  // ...
+];
+
+//...
+```
+
+ProductDetail.vue：
+
+```vue
+<template>
+  <h3>ProductDetail</h3>
+  <p>productId: {{ $route.params.id }}</p>
+</template>
+```
+
+設置路由切換 (App.vue)：
+
+```vue
+<template>
+  <!-- 省略前面 -->
+
+  <nav>
+    <!-- 省略前面 -->
+    <router-link to="/products/1">Go to /products/1</router-link> |
+    <router-link to="/products/2">Go to /products/2</router-link>
+  </nav>
+
+  <!-- 省略 -->
+</template>
+```
+
+通過在路由設置 `props` 選項，則可以解除這種限制，允許你在任何地方使用、重用組件，以下分為幾種模式：
+
+### 布林模式
+
+當 `props` 被設置為 `true` 時，`route.params` 將被作為 `props` 傳給組件。
+
+> 注意：此方法無法使用 `query` 帶入參數，請參考下方的[函數模式](#函數模式)。
+
+路由配置 `props` (router/index.js)：
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  // ...
+  // 設置 props - 布林模式
+  {
+    path: '/products/:id',
+    name: 'ProductDetail',
+    component: () => import('@/views/ProductDetail.vue'),
+    props: true,
+  },
+  // ...
+];
+
+//...
+```
+
+修改組件接收 `props` (ProductDetail.vue)：
+
+```vue
+<script setup>
+defineProps({
+  id: String,
+});
+</script>
+
+<template>
+  <h3>ProductDetail</h3>
+  <p>productId: {{ id }}</p>
+</template>
+```
+
+渲染結果：
+
+![router-24.gif](./images/gif/router-24.gif)
+
+#### § 命名視圖
+
+針對設置了命名視圖的路由，則必須為每個命名視圖定義 `props` 配置：
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  // ...
+  // 設置 props - 布林模式
+  {
+    path: '/products2/:id',
+    name: 'ProductWithNav',
+    components: {
+      default: () => import('@/views/ProductDetail.vue'),
+      sidebar: () => import('@/views/ProductNav.vue'),
+    },
+    // 多個視圖定義 props
+    props: { default: true, sidebar: false },
+  },
+  // ...
+];
+
+//...
+```
+
+設置路由切換 (App.vue)：
+
+```vue
+<template>
+  <!-- 省略前面 -->
+
+  <nav>
+    <!-- 省略前面 -->
+    <router-link to="/products2/1">Go to /products2/1</router-link> |
+    <router-link to="/products2/2">Go to /products2/2</router-link>
+  </nav>
+
+  <!-- 省略 -->
+</template>
+```
+
+渲染結果：
+
+![router-25.gif](./images/gif/router-25.gif)
+
+---
+
+### 物件模式
+
+當 `props` 設置為物件時，**它將會依照原樣作為 `props` 傳給組件**，`props` 為**靜態資料 (固定參數)** 的時候很有用。設置了命名視圖的路由一樣必須為每個命名視圖定義 `props` 配置。
+
+路由配置 `props` (router/index.js)：
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  // ...
+  // 設置 props - 物件模式
+  {
+    path: '/products',
+    name: 'Products',
+    component: () => import('@/views/ProductDetail.vue'),
+    // 傳入靜態資料
+    props: { id: '100' },
+  },
+  {
+    path: '/products2',
+    name: 'Products2',
+    components: {
+      default: () => import('@/views/ProductDetail.vue'),
+      sidebar: () => import('@/views/ProductNav.vue'),
+    },
+    // 多個視圖定義 props
+    props: { default: { id: '200' }, sidebar: false },
+  },
+  // ...
+];
+
+//...
+```
+
+設置路由切換 (App.vue)：
+
+```vue
+<template>
+  <!-- 省略前面 -->
+
+  <nav>
+    <!-- 省略前面 -->
+    <router-link to="/products">Go to /products</router-link> |
+    <router-link to="/products2">Go to /products2</router-link>
+  </nav>
+
+  <!-- 省略 -->
+</template>
+```
+
+渲染結果：
+
+![router-26.gif](./images/gif/router-26.gif)
+
+---
+
+### 函數模式
+
+可以創建一個返回 `props` 的函數，該函數會傳入一個 `route` 物件參數，這允許你將參數轉換為其他類型，或是將靜態值與基於路由的值相結合等等。
+
+路由配置 `props` (router/index.js)：
+
+```javascript
+//...
+
+// 配置路由規則
+const routes = [
+  // ...
+  // 設置 props - 函數模式
+  {
+    // /find?t=vue&c=book
+    // 將 { title: "vue", category: "book", isFind: true } 作為 props 傳遞給組件
+    path: '/find',
+    name: 'ProductFind',
+    component: () => import('@/views/ProductFind.vue'),
+    props: (route) => ({
+      title: route.query.t,
+      category: route.query.c,
+      isFind: true,
+    }),
+  },
+  // ...
+];
+
+//...
+```
+
+ProductFind.vue：
+
+```vue
+<script setup>
+const props = defineProps({
+  title: String,
+  category: String,
+  isFind: Boolean,
+});
+</script>
+
+<template>
+  <h3>ProductFind</h3>
+  <p>props data: {{ props }}</p>
+</template>
+```
+
+設置路由切換 (App.vue)：
+
+```vue
+<template>
+  <!-- 省略前面 -->
+
+  <nav>
+    <!-- 省略前面 -->
+    <router-link to="/find?t=vue&c=book">Go to /find?t=vue&c=book</router-link>
+    |
+    <router-link to="/find?t=ps5&c=game">Go to /find?t=ps5&c=game</router-link>
+  </nav>
+
+  <!-- 省略 -->
+</template>
+```
+
+渲染結果：
+
+![router-27.gif](./images/gif/router-27.gif)
+
+---
+
+### 通過 `<router-view>` 插槽 (不建議)
+
+也可以通過 `<router-view>` 插槽 (slot) 傳遞參數。
+
+但是在這種情況下，如以下範例所示，所有的路由組件都會傳遞 `view-prop`，這表示**所有的路由組件內部都聲明了接收一個 `view-prop` 的 prop，但這未必需要，因此請盡可能使用上面其他的選項**。
+
+```vue
+<template>
+  <!-- 省略前面 -->
+
+  <router-view v-slot="{ Component }">
+    <component :is="Component" view-prop="value" />
+  </router-view>
+
+  <!-- 省略 -->
+</template>
+```
