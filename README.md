@@ -36,6 +36,8 @@
 
 - [Active links](#active-links)
 
+- [不同的歷史模式](#不同的歷史模式)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -2173,3 +2175,126 @@ const router = createRouter({
 現在全部的連結樣式都被修改。
 
 ![router-31.gif](./images/gif/router-31.gif)
+
+## 不同的歷史模式
+
+在 `createRouter()` 時可以透過 `history` 選項配置選擇不同的歷史模式，Vue-Router 4 預設的是 `createWebHistory()`。
+
+### Hash 模式
+
+[💻Demo](https://ypinpin.github.io/vue-router-test/) | [📝Code](https://github.com/YPINPIN/vue-router-test)
+
+`history` 設置 `createWebHashHistory()`，它在傳遞實際 url 之前使用了一個 `#` (hash) 字元，利用 `#` 做頁面的切換。這種模式因為 url 未被發送至伺服器，所以**不需要在伺服器端上進行配置處理**，但是由於添加了 `#` (hash)，**因此在 SEO 中存在一些問題**，若擔心這個問題則可以使用 HTML5 模式。
+
+```javascript
+import { createRouter, createWebHashHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  // 指定模式
+  history: createWebHashHistory(),
+  // 設定前面配置的路由
+  routes,
+});
+
+//...
+```
+
+![router-32.gif](./images/gif/router-32.gif)
+
+想修改預設路徑( `base` )可以參考此[官方文檔](https://router.vuejs.org/api/#createWebHashHistory)、[範例 code](https://github.com/YPINPIN/vue-router-test/commit/2a118c62d787bc118ecf192fc4a11f589a50e037)。
+
+![router-33.gif](./images/gif/router-33.gif)
+
+---
+
+### HTML5 模式
+
+`history` 設置 `createWebHistory()`，基於 History API，**這種模式實現頁面跳轉不需要重新載入頁面，且 url 看起來更加直觀不會添加特殊字元**，例如：`https://example.com/user/id`。修改路徑的方式與 Hash 模式相同，可以傳遞參數給 `createWebHistory()`，[官方文檔](https://router.vuejs.org/api/#createWebHistory)。
+
+如果應用程序可能在不同的 URL 路徑下運行（如子目錄或子網站），就建議使用 `import.meta.env.BASE_URL` 這個參數來設置應用程序的根路徑，詳細說明可以查看 [Vite 官方文檔](https://cn.vitejs.dev/guide/env-and-mode)。若無任何子目錄則可寫 `history: createWebHistory()`。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  // 指定模式
+  history: createWebHistory(import.meta.env.BASE_URL),
+  // 設定前面配置的路由
+  routes,
+});
+
+//...
+```
+
+![router-34.gif](./images/gif/router-34.gif)
+
+但是使用此模式時，**必須要在伺服器端進行一些配置**，不然使用者在瀏覽器中直接訪問 `https://example.com/user/id` 時，伺服器將找不到對應路徑，並會返回一個 404 錯誤。
+
+而要解決這個問題需要在伺服器上添加配置，當 url 不匹配任何資源時，它將提供與應用中 index.html 相同的頁面。
+
+#### § 伺服器配置
+
+可以參考此[官方文檔](https://router.vuejs.org/guide/essentials/history-mode.html#Example-Server-Configurations)。
+
+- 使用 Vercel 部屬的範例：
+
+  [💻Demo](https://vue-router-test-eight.vercel.app/) | [📝Code](https://github.com/YPINPIN/vue-router-test/tree/modeHTML)
+
+  > [vercel 相關文檔](https://vercel.com/docs/frameworks/vite#using-vite-to-make-spas)
+
+  需要注意的是，伺服器端將不再報告 404 錯誤，因為現在所有未對應的路徑都會顯示你的 index.html 文件。因此需要在 Vue 應用中添加一個路由來匹配顯示 404 頁面。
+
+  ```javascript
+  import { createRouter, createWebHistory } from 'vue-router';
+  //...
+
+  // 配置路由規則
+  const routes = [
+    //...
+    // 設置 404 NotFound 頁面
+    {
+      path: '/:pathMatch(.*)',
+      name: 'NotFound',
+      component: () => import('@/views/NotFound.vue'),
+    },
+  ];
+
+  //...
+  ```
+
+  部屬結果：
+
+  ![router-35.gif](./images/gif/router-35.gif)
+
+#### § GitHub Page 配置 HTML5 模式出現 404 錯誤
+
+因為 github 無法幫開發者進行路由對應，因此建議改用 Hash 模式或是使用其他託管平台，例如：Netlify、Vercel。
+
+更多說明可以參考此 [github discussions](https://github.com/orgs/community/discussions/36908)、[stackoverflow](https://stackoverflow.com/questions/48521177/404-when-reloading-a-vue-website-published-to-github-pages)。
+
+---
+
+### Memory 模式
+
+`history` 設置 `createMemoryHistory()`，不會修改 url，路由地址只存在記憶體中，**因此沒有歷史紀錄，無法使用上一頁/下一頁，刷新頁面則會回到首頁**。較適合 Node 環境以及 SSR。
+
+```javascript
+import { createRouter, createMemoryHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  // 指定模式
+  history: createMemoryHistory(),
+  // 設定前面配置的路由
+  routes,
+});
+
+//...
+```
+
+![router-36.gif](./images/gif/router-36.gif)
