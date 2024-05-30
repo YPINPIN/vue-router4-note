@@ -52,6 +52,8 @@
 
   - [完整的導航流程](#完整的導航流程)
 
+- [路由元信息](#路由元信息)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -2822,3 +2824,122 @@ onBeforeRouteLeave((to, from) => {
 - 10.調用全局的 `afterEach` 鉤子
 - 11.觸發 DOM 更新
 - 12.調用 `beforeRouteEnter` 中傳給 `next` 的回調函數，創建好的組件實例會作為回調函數的參數傳入
+
+## 路由元信息
+
+可以通過在路由配置 `meta` 屬性來將任意信息附加到路由上，例如：誰可以訪問路由、transition 名稱等等，**它可以在路由地址和導航守衛上被訪問到**。
+
+### 配置 meta
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // 路由元信息
+  {
+    path: '/comments',
+    component: () => import('@/views/CommentsLayout.vue'),
+    children: [
+      {
+        path: 'new',
+        name: 'CommentNew',
+        component: () => import('@/views/CommentNew.vue'),
+        // 只有經過身分驗證的使用者可以留言
+        meta: { requiresAuth: true },
+      },
+      {
+        path: ':id',
+        name: 'CommentDetail',
+        component: () => import('@/views/CommentDetail.vue'),
+        // 任何人都可以查看留言
+        meta: { requiresAuth: false },
+      },
+    ],
+  },
+  //...
+];
+
+//...
+```
+
+設置 CommentsLayout.vue：
+
+```vue
+<script setup>
+import { ref } from 'vue';
+
+const hasAuth = ref(localStorage.getItem('hasAuth'));
+
+function setAuth() {
+  localStorage.setItem('hasAuth', true);
+  hasAuth.value = 'true';
+}
+function removeAuth() {
+  localStorage.removeItem('hasAuth');
+  hasAuth.value = null;
+}
+</script>
+
+<template>
+  <h3>CommentsLayout</h3>
+  <button v-if="hasAuth" @click="removeAuth">removeAuth</button>
+  <button v-else @click="setAuth">setAuth</button>
+  <hr />
+  <router-link to="/comments/new">new comment</router-link> |
+  <router-link to="/comments/1">Go to comment id 1</router-link> |
+  <router-link to="/comments/2">Go to comment id 2</router-link>
+  <div class="layout">
+    <router-view />
+  </div>
+</template>
+
+<style scoped>
+.layout {
+  padding: 10px;
+  background-color: lightsalmon;
+  min-height: 20vh;
+}
+</style>
+```
+
+### 獲取 meta
+
+透過 `route.meta` 可以直接訪問設置的元信息，可以搭配導航守衛進行指定的操作。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  //...
+});
+
+// 全局前置守衛
+router.beforeEach((to, from) => {
+  //...
+  // 檢查路由是否需要授權
+  if (to.meta.requiresAuth && !hasAuth()) {
+    window.alert('You need to set Auth.');
+    // 取消導航
+    return false;
+  }
+});
+
+//...
+
+// 檢查使用者是否取得權限
+function hasAuth() {
+  const hasAuth = localStorage.getItem('hasAuth');
+  return hasAuth;
+}
+
+//...
+```
+
+渲染結果：
+
+![router-48.gif](./images/gif/router-48.gif)

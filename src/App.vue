@@ -123,7 +123,8 @@ function goTo(n) {
     <router-link to="/test/1">Go to /test/1</router-link> |
     <router-link to="/test/2">Go to /test/2</router-link> |
     <router-link to="/test/1?q=123">Go to /test/1?q=123</router-link> |
-    <router-link to="/test/2#main">Go to /test/2#main</router-link>
+    <router-link to="/test/2#main">Go to /test/2#main</router-link> |
+    <router-link to="/comments">Go to /comments</router-link>
   </nav>
 
   <section>

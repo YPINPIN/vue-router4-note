@@ -237,6 +237,27 @@ const routes = [
     // 設置函數陣列
     beforeEnter: [removeQuery, removeHash],
   },
+  // 路由元信息
+  {
+    path: '/comments',
+    component: () => import('@/views/CommentsLayout.vue'),
+    children: [
+      {
+        path: 'new',
+        name: 'CommentNew',
+        component: () => import('@/views/CommentNew.vue'),
+        // 只有經過身分驗證的使用者可以留言
+        meta: { requiresAuth: true },
+      },
+      {
+        path: ':id',
+        name: 'CommentDetail',
+        component: () => import('@/views/CommentDetail.vue'),
+        // 任何人都可以查看留言
+        meta: { requiresAuth: false },
+      },
+    ],
+  },
   // 設置 404 NotFound 頁面
   {
     path: '/:pathMatch(.*)',
@@ -277,12 +298,25 @@ router.beforeEach((to, from) => {
     // return undefined;
     // return true;
   }
+
+  // 檢查路由是否需要授權
+  if (to.meta.requiresAuth && !hasAuth()) {
+    window.alert('You need to set Auth.');
+    // 取消導航
+    return false;
+  }
 });
 
 // 檢查使用者是否已經登入
 function isAuthenticated() {
   const isLogin = localStorage.getItem('isLogin');
   return isLogin;
+}
+
+// 檢查使用者是否取得權限
+function hasAuth() {
+  const hasAuth = localStorage.getItem('hasAuth');
+  return hasAuth;
 }
 
 // 全局解析守衛
