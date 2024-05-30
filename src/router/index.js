@@ -1,4 +1,9 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import {
+  NavigationFailureType,
+  createRouter,
+  createWebHistory,
+  isNavigationFailure,
+} from 'vue-router';
 // 靜態導入
 import Home from '@/views/Home.vue';
 
@@ -206,6 +211,32 @@ const routes = [
       },
     ],
   },
+  // Login 頁面
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/Login.vue'),
+  },
+  // Camera 頁面
+  {
+    path: '/camera',
+    name: 'Camera',
+    component: () => import('@/views/Camera.vue'),
+    meta: { requiresCamera: true },
+  },
+  // Test 頁面
+  {
+    path: '/test/:testId',
+    name: 'Test',
+    component: () => import('@/views/Test.vue'),
+    // beforeEnter: (to, from) => {
+    //   console.log('beforeEnter-- /test/:testId ');
+    //   // 可以根據條件決定是否取消導航
+    //   // return false;
+    // },
+    // 設置函數陣列
+    beforeEnter: [removeQuery, removeHash],
+  },
   // 設置 404 NotFound 頁面
   {
     path: '/:pathMatch(.*)',
@@ -230,6 +261,91 @@ const router = createRouter({
   // linkActiveClass: 'link-active-green',
   // linkExactActiveClass: 'link-exact-active-green',
 });
+
+// 全局前置守衛
+router.beforeEach((to, from) => {
+  console.log('to:', to);
+  console.log('from:', from);
+  // 取消當前的導航
+  // return false;
+  // 一個路由地址(字串或物件)
+  if (!isAuthenticated() && to.name !== 'Login') {
+    // 重新導向到登入頁
+    return { name: 'Login' };
+  } else {
+    // 不返回或返回 undefined、true
+    // return undefined;
+    // return true;
+  }
+});
+
+// 檢查使用者是否已經登入
+function isAuthenticated() {
+  const isLogin = localStorage.getItem('isLogin');
+  return isLogin;
+}
+
+// 全局解析守衛
+router.beforeResolve(async (to) => {
+  console.log('router beforeResolve--');
+  if (to.meta.requiresCamera) {
+    try {
+      await askForCameraPermission();
+    } catch (error) {
+      console.log(error);
+      if (error === 'NotAllowedError') {
+        // 處理錯誤並取消導航
+        return false;
+      } else {
+        // 意料之外的錯誤，取消導航並把錯誤傳給全局處理器
+        throw error;
+      }
+    }
+  }
+});
+
+// 模擬獲取權限
+function askForCameraPermission() {
+  console.log('askForCameraPermission...');
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (Math.random() > 0.5) {
+        resolve();
+      } else {
+        reject('NotAllowedError');
+      }
+    }, 2000);
+  });
+}
+
+// 全局後置鉤子
+router.afterEach((to, from, failure) => {
+  console.log('router afterEach--');
+  if (failure) {
+    // 重複路由不顯示錯誤
+    if (!isNavigationFailure(failure, NavigationFailureType.duplicated)) {
+      sendToAnalytics(to, from, failure);
+    }
+  }
+});
+
+function sendToAnalytics(to, from, failure) {
+  console.log('sendToAnalytics---', failure);
+}
+
+// 共用函數
+function removeQuery(to) {
+  if (Object.keys(to.query).length) {
+    console.log('removeQuery');
+    return { path: to.path, query: {}, hash: to.hash };
+  }
+}
+function removeHash(to) {
+  if (to.hash) {
+    console.log('removeHash');
+    return { path: to.path, query: to.query, hash: '' };
+  }
+}
 
 // 共享路由實例
 export default router;

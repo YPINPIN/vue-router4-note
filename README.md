@@ -38,6 +38,20 @@
 
 - [不同的歷史模式](#不同的歷史模式)
 
+- [導航守衛](#導航守衛)
+
+  - [全局前置守衛](#全局前置守衛)
+
+  - [全局解析守衛](#全局解析守衛)
+
+  - [全局後置鉤子](#全局後置鉤子)
+
+  - [針對單個路由的守衛](#針對單個路由的守衛)
+
+  - [組件內的守衛](#組件內的守衛)
+
+  - [完整的導航流程](#完整的導航流程)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -348,6 +362,8 @@ watch(
 #### § 4. `onBeforeRouteUpdate` 路由導航守衛
 
 除了使用 `watch` 之外，也可以在組件內另外調用 `onBeforeRouteUpdate` 路由導航守衛，來獲取當前路由變化。
+
+> 可以參考[組件內的守衛](#組件內的守衛)。
 
 ```vue
 <script setup>
@@ -2298,3 +2314,511 @@ const router = createRouter({
 ```
 
 ![router-36.gif](./images/gif/router-36.gif)
+
+## 導航守衛
+
+導航守衛主要是透過重新導向或是取消的方式來守衛導航，有針對全局的、單一路由的以及組件的各種方式。
+
+### 全局前置守衛
+
+可以使用 `router.beforeEach` 來註冊一個全局前置守衛，當一個導航觸發時，全局前置守衛會按照創建順序調用。
+
+每個守衛方法主要接收兩個參數：
+
+- `to` -> 即將要進入的目標路由物件
+
+- `from` -> 當前正要離開的路由物件
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  //...
+});
+
+// 全局前置守衛
+router.beforeEach((to, from) => {
+  console.log('to:', to);
+  console.log('from:', from);
+});
+
+//...
+```
+
+![router-37.gif](./images/gif/router-37.gif)
+
+> 補充：可選的第三個參數 `next`，以後可能被移除，不建議使用。在之前的 Vue Router 版本中，必須使用第三個參數 `next`，因開發中很容易調用多次 `next`，目前已將其取消，但是仍然支持使用。但是使用時，請確保 `next` 在各邏輯中只被調用一次，否則鉤子將永遠不會被 `resolve` 或報錯。詳細說明可以查看此[官方文檔](https://router.vuejs.org/zh/guide/advanced/navigation-guards.html#%E5%8F%AF%E9%80%89%E7%9A%84%E7%AC%AC%E4%B8%89%E4%B8%AA%E5%8F%82%E6%95%B0-next)。
+
+可以返回的值有以下三種：
+
+- `false`
+
+  會取消當前的導航。
+
+  ```javascript
+  import { createRouter, createWebHistory } from 'vue-router';
+  //...
+
+  // 創建路由實例
+  const router = createRouter({
+    //...
+  });
+
+  router.beforeEach((to, from) => {
+    //...
+    // 透過返回 false 取消導航
+    return false;
+  });
+
+  //...
+  ```
+
+  ![router-38.gif](./images/gif/router-38.gif)
+
+- 一個路由地址(字串或物件)
+
+  **通過路由地址重新導向到一個不同的地址，如同調用 `router.push()`**。會中斷當前的導航，同時用相同的 from 創建一個新的導航。
+
+- 不返回或返回 `undefined`、`true`
+
+  則導航是有效的，並且調用下一個導航守衛。
+
+  ```javascript
+  import { createRouter, createWebHistory } from 'vue-router';
+  //...
+
+  // 配置路由規則
+  const routes = [
+    //...
+    // Login 頁面
+    {
+      path: '/login',
+      name: 'Login',
+      component: () => import('@/views/Login.vue'),
+    },
+    //...
+  ];
+
+  // 創建路由實例
+  const router = createRouter({
+    //...
+  });
+
+  // 全局前置守衛
+  router.beforeEach((to, from) => {
+    //...
+    // 一個路由地址(字串或物件)
+    if (!isAuthenticated() && to.name !== 'Login') {
+      // 重新導向到登入頁
+      return { name: 'Login' };
+    } else {
+      // 不返回或返回 undefined、true
+      // return undefined;
+      // return true;
+    }
+  });
+
+  // 檢查使用者是否已經登入
+  function isAuthenticated() {
+    const isLogin = localStorage.getItem('isLogin');
+    return isLogin;
+  }
+
+  //...
+  ```
+
+  登入頁設置 Login.vue：
+
+  ```vue
+  <script setup>
+  import { useRouter } from 'vue-router';
+  import { ref } from 'vue';
+
+  const router = useRouter();
+
+  const isLogin = ref(localStorage.getItem('isLogin'));
+
+  function login() {
+    localStorage.setItem('isLogin', true);
+    router.push({ name: 'Home' });
+  }
+  function logout() {
+    localStorage.removeItem('isLogin');
+    isLogin.value = null;
+  }
+  </script>
+
+  <template>
+    <h2>Login page</h2>
+    <hr />
+    <button v-if="isLogin" @click="logout">Logout</button>
+    <button v-else @click="login">Login</button>
+  </template>
+  ```
+
+  ![router-39.gif](./images/gif/router-39.gif)
+
+如果遇到意外情況，可能會拋出一個 Error，**這會取消導航並且調用 `router.onError()` 註冊過的回調**。
+
+---
+
+### 全局解析守衛
+
+可以使用 `router.beforeResolve` 來註冊一個全局解析守衛，和 `router.beforeEach` 類似，它在每次導航時都會觸發，**全局解析守衛會在導航被確認之前、所有組件內守衛和異步路由組件被解析之後調用，是獲取數據或執行任何其他操作 (如果使用者無法進入頁面時希望避免執行的操作) 的理想位置**。
+
+以下範例為確保使用者可以訪問自定義的 `meta` 屬性並進行操作。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // Camera 頁面
+  {
+    path: '/camera',
+    name: 'Camera',
+    component: () => import('@/views/Camera.vue'),
+    meta: { requiresCamera: true },
+  },
+  //...
+];
+
+// 創建路由實例
+const router = createRouter({
+  //...
+});
+
+//...
+
+// 全局解析守衛
+router.beforeResolve(async (to) => {
+  console.log('router beforeResolve--');
+  if (to.meta.requiresCamera) {
+    try {
+      await askForCameraPermission();
+    } catch (error) {
+      console.log(error);
+      if (error === 'NotAllowedError') {
+        // 處理錯誤並取消導航
+        return false;
+      } else {
+        // 意料之外的錯誤，取消導航並把錯誤傳給全局處理器
+        throw error;
+      }
+    }
+  }
+});
+
+// 模擬獲取權限
+function askForCameraPermission() {
+  console.log('askForCameraPermission...');
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (Math.random() > 0.5) {
+        resolve();
+      } else {
+        reject('NotAllowedError');
+      }
+    }, 2000);
+  });
+}
+
+//...
+```
+
+![router-40.gif](./images/gif/router-40.gif)
+
+---
+
+### 全局後置鉤子
+
+可以使用 `router.afterEach` 來註冊一個全局後置鉤子，**和守衛不同的是，這些鉤子不會接受 `next` 函數，也不會改變導航本身**，對於分析等等輔助功能很有用。
+
+另外接收 `navigation failures` 作為第三個參數，表示路由跳轉失敗。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  //...
+});
+
+//...
+
+// 全局後置鉤子
+router.afterEach((to, from, failure) => {
+  console.log('router afterEach--');
+  if (failure) {
+    sendToAnalytics(to, from, failure);
+  }
+});
+
+function sendToAnalytics(to, from, failure) {
+  console.log('sendToAnalytics---', failure);
+}
+
+//...
+```
+
+![router-41.gif](./images/gif/router-41.gif)
+
+---
+
+### 針對單個路由的守衛
+
+可以直接在單一路由上配置 `beforeEnter` 守衛，需要注意的是`beforeEnter` 只在進入路由時觸發，不會在 `params`、`query` 或 `hash` 改變時觸發，**只有在從一個不同的路由導航時才會觸發**。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // Test 頁面
+  {
+    path: '/test/:testId',
+    name: 'Test',
+    component: () => import('@/views/Test.vue'),
+    beforeEnter: (to, from) => {
+      console.log('beforeEnter-- /test/:testId ');
+      // 可以根據條件決定是否取消導航
+      // return false;
+    },
+  },
+  //...
+];
+
+// 創建路由實例
+const router = createRouter({
+  //...
+});
+
+//...
+```
+
+![router-42.gif](./images/gif/router-42.gif)
+
+也可以傳遞一個函數陣列給 `beforeEnter`，**這對在不同的路由中重用相同的守衛時很有幫助**。
+
+> 也可以通過自定義的 `meta` 屬性搭配前面的全局導航守衛來實現類似的行為。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // Test 頁面
+  {
+    path: '/test/:testId',
+    name: 'Test',
+    component: () => import('@/views/Test.vue'),
+    // 設置函數陣列
+    beforeEnter: [removeQuery, removeHash],
+  },
+  //...
+];
+
+// 創建路由實例
+const router = createRouter({
+  //...
+});
+
+// 共用函數
+function removeQuery(to) {
+  if (Object.keys(to.query).length) {
+    console.log('removeQuery');
+    return { path: to.path, query: {}, hash: to.hash };
+  }
+}
+function removeHash(to) {
+  if (to.hash) {
+    console.log('removeHash');
+    return { path: to.path, query: to.query, hash: '' };
+  }
+}
+
+//...
+```
+
+![router-43.gif](./images/gif/router-43.gif)
+
+---
+
+### 組件內的守衛
+
+#### § 使用 Options API
+
+可以在路由組件內直接定義的路由守衛有以下三種。
+
+- `beforeRouteEnter`
+
+  **在組件的對應路由確認前調用，組件尚未創建**，因此不可以訪問 `this`，但是可以通過傳遞回調函數給 `next` 參數，`next` 會在導航被確認的時候執行回調函數，並把組件實例作為參數傳入。
+
+  > 注意只有 `beforeRouteEnter` 支持給 `next` 傳遞回調函數。
+
+  Test.vue：
+
+  ```vue
+  <script>
+  export default {
+    name: 'Test',
+    data() {
+      return {
+        title: 'test page',
+      };
+    },
+    beforeRouteEnter(to, from, next) {
+      console.log('beforeRouteEnter--');
+      next((vm) => {
+        // 通過 vm 訪問組件實例
+        console.log('title:', vm.title);
+      });
+    },
+  };
+  </script>
+
+  <template>
+    <h2>Test page</h2>
+    <p>testId: {{ $route.params.testId }}</p>
+  </template>
+  ```
+
+  渲染結果：
+
+  ![router-44.gif](./images/gif/router-44.gif)
+
+- `beforeRouteUpdate`
+
+  **當前路由改變但是組件被複用時調用**，例如帶有動態參數的路由 `/test/:testId`，在 /test/1 和 /test/2 之間跳轉的時候被調用。因為組件已經掛載好，所以可以訪問 `this` (組件實例)。
+
+  Test.vue：
+
+  ```vue
+  <script>
+  export default {
+    name: 'Test',
+    data() {
+      return {
+        title: 'test page',
+      };
+    },
+    //...
+    beforeRouteUpdate(to, from) {
+      // 可以使用 this
+      console.log(
+        `beforeRouteUpdate-- title: ${this.title} id: ${to.params.testId}`
+      );
+    },
+  };
+  </script>
+
+  <template>
+    <h2>Test page</h2>
+    <p>testId: {{ $route.params.testId }}</p>
+  </template>
+  ```
+
+  渲染結果：
+
+  ![router-45.gif](./images/gif/router-45.gif)
+
+- `beforeRouteLeave`
+
+  導航離開組件對應路由時調用，通常用來預防使用者在未保存修改前突然離開，可以通過返回 `false` 來取消導航。
+
+  Test.vue：
+
+  ```vue
+  <script>
+  export default {
+    name: 'Test',
+    data() {
+      return {
+        title: 'test page',
+      };
+    },
+    //...
+    beforeRouteLeave(to, from) {
+      console.log('beforeRouteLeave--');
+      const answer = window.confirm(
+        'Do you really want to leave? you have unsaved changes!'
+      );
+      if (!answer) {
+        return false;
+      }
+    },
+  };
+  </script>
+
+  <template>
+    <h2>Test page</h2>
+    <p>testId: {{ $route.params.testId }}</p>
+  </template>
+  ```
+
+  渲染結果：
+
+  ![router-46.gif](./images/gif/router-46.gif)
+
+#### § 使用 組合式 API
+
+組合式 API 可以使用 `onBeforeRouteUpdate` 以及 `onBeforeRouteLeave` 分別添加 update 和 leave 守衛，並且可以用在任何由 `<router-view>` 渲染的組件中，不限於路由組件。
+
+需要注意由於 `setup` 被調用的時機 (導航已經被確認)，因此組合式 API 不存在 `onBeforeRouteEnter`。
+
+Test.vue：
+
+```vue
+<script setup>
+import { onBeforeRouteUpdate, onBeforeRouteLeave } from 'vue-router';
+
+onBeforeRouteUpdate((to, from) => {
+  console.log('onBeforeRouteUpdate-- id:', to.params.testId);
+});
+onBeforeRouteLeave((to, from) => {
+  console.log('onBeforeRouteLeave--');
+  const answer = window.confirm(
+    'Do you really want to leave? you have unsaved changes!'
+  );
+  //取消導航並停留在當前頁面
+  if (!answer) {
+    return false;
+  }
+});
+</script>
+
+<template>
+  <h2>Test page</h2>
+  <p>testId: {{ $route.params.testId }}</p>
+</template>
+```
+
+渲染結果：
+
+![router-47.gif](./images/gif/router-47.gif)
+
+---
+
+### 完整的導航流程
+
+- 1.導航被觸發
+- 2.準備離開的組件裡調用 `beforeRouteLeave` ( `onBeforeRouteLeave` )
+- 3.調用全局守衛 `beforeEach`
+- 4.在重用的組件裡調用 `beforeRouteUpdate` ( `onBeforeRouteUpdate` )
+- 5.在路由配置裡調用 `beforeEnter`
+- 6.解析異步路由組件
+- 7.在被啟動的組件裡調用 `beforeRouteEnter`
+- 8.調用全局守衛 `beforeResolve`
+- 9.導航被確認
+- 10.調用全局的 `afterEach` 鉤子
+- 11.觸發 DOM 更新
+- 12.調用 `beforeRouteEnter` 中傳給 `next` 的回調函數，創建好的組件實例會作為回調函數的參數傳入

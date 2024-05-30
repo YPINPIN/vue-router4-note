@@ -117,6 +117,13 @@ function goTo(n) {
       exact-active-class="link-exact-active-green"
       >Go to /students/456</router-link
     >
+    |
+    <router-link to="/login">Go to LoginPage</router-link> |
+    <router-link to="/camera">Go to CameraPage</router-link>|
+    <router-link to="/test/1">Go to /test/1</router-link> |
+    <router-link to="/test/2">Go to /test/2</router-link> |
+    <router-link to="/test/1?q=123">Go to /test/1?q=123</router-link> |
+    <router-link to="/test/2#main">Go to /test/2#main</router-link>
   </nav>
 
   <section>
