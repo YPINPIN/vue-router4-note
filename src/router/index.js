@@ -270,7 +270,7 @@ const routes = [
     name: 'ShowPost2',
     component: () => import('@/views/ShowPost2.vue'),
   },
-  //  router-view 插槽
+  // router-view 插槽
   {
     path: '/slot',
     component: () => import('@/views/SlotLayout.vue'),
@@ -284,6 +284,69 @@ const routes = [
         path: 'two',
         name: 'SlotComp2',
         component: () => import('@/views/SlotComp2.vue'),
+      },
+    ],
+  },
+  // 單一路由指定 transition
+  {
+    path: '/transition',
+    component: () => import('@/views/PanelLayout.vue'),
+    children: [
+      {
+        path: '',
+        redirect: '/transition/left',
+      },
+      {
+        path: 'left',
+        component: () => import('@/views/PanelLeft.vue'),
+        meta: { transition: 'slide-left' },
+      },
+      {
+        path: 'right',
+        component: () => import('@/views/PanelRight.vue'),
+        meta: { transition: 'slide-right' },
+      },
+      {
+        path: 'other',
+        component: () => import('@/views/PanelOther.vue'),
+      },
+    ],
+  },
+  // 基於路由的動態過渡
+  {
+    path: '/transition-step',
+    component: () => import('@/views/StepLayout.vue'),
+    children: [
+      {
+        path: '',
+        redirect: '/transition-step/step1',
+      },
+      {
+        path: 'step1',
+        component: () => import('@/views/Step1.vue'),
+      },
+      {
+        path: 'step1/1',
+        component: () => import('@/views/Step1_1.vue'),
+      },
+      {
+        path: 'step1/2',
+        component: () => import('@/views/Step1_2.vue'),
+      },
+    ],
+  },
+  // 強制在複用的路由組件之間進行過渡
+  {
+    path: '/transition-demo',
+    component: () => import('@/views/DemoLayout.vue'),
+    children: [
+      {
+        path: '',
+        redirect: '/transition-demo/1',
+      },
+      {
+        path: ':id',
+        component: () => import('@/views/Demo.vue'),
       },
     ],
   },
@@ -389,6 +452,14 @@ router.afterEach((to, from, failure) => {
     if (!isNavigationFailure(failure, NavigationFailureType.duplicated)) {
       sendToAnalytics(to, from, failure);
     }
+  }
+
+  // 基於路由設置動態過渡效果
+  let toPath = to.path.split('/');
+  if (toPath[1] && toPath[1] === 'transition-step') {
+    const toDepth = toPath.length;
+    const fromDepth = from.path.split('/').length;
+    to.meta.transition = toDepth < fromDepth ? 'slide-right' : 'slide-left';
   }
 });
 

@@ -58,6 +58,8 @@
 
 - [router-view 插槽](#router-view-插槽)
 
+- [過渡動畫效果](#過渡動畫效果)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -3152,7 +3154,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 // 配置路由規則
 const routes = [
   //...
-  //  router-view 插槽
+  // router-view 插槽
   {
     path: '/slot',
     component: () => import('@/views/SlotLayout.vue'),
@@ -3282,3 +3284,331 @@ function showCount() {
 渲染結果：
 
 ![router-54.gif](./images/gif/router-54.gif)
+
+## 過渡動畫效果
+
+想要在路由組件上使用轉場效果，並對導航進行動畫處理，需要使用 [router-view 插槽](#router-view-插槽)。
+
+```vue
+<template>
+  <!-- 省略 -->
+  <router-view v-slot="{ Component }">
+    <transition name="fade" mode="out-in">
+      <component :is="Component" />
+    </transition>
+  </router-view>
+</template>
+
+<!-- 省略 -->
+```
+
+### 單個路由的過渡
+
+上面的用法會對**所有的路由使用相同的過渡效果**。
+
+可以使用 `meta` ([路由元信息](#路由元信息)) 搭配動態的 `name` 讓每個路由的組件有不同的過渡效果。
+
+路由配置 (router/index.js)：
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // 單一路由指定 transition
+  {
+    path: '/transition',
+    component: () => import('@/views/PanelLayout.vue'),
+    children: [
+      {
+        path: '',
+        redirect: '/transition/left',
+      },
+      {
+        path: 'left',
+        component: () => import('@/views/PanelLeft.vue'),
+        meta: { transition: 'slide-left' },
+      },
+      {
+        path: 'right',
+        component: () => import('@/views/PanelRight.vue'),
+        meta: { transition: 'slide-right' },
+      },
+      {
+        path: 'other',
+        component: () => import('@/views/PanelOther.vue'),
+      },
+    ],
+  },
+  //...
+];
+
+//...
+```
+
+PanelLayout.vue：
+
+```vue
+<template>
+  <h2>PanelLayout Page</h2>
+  <hr />
+  <router-link to="/transition/left">Go to /transition/left</router-link> |
+  <router-link to="/transition/right">Go to /transition/right</router-link> |
+  <router-link to="/transition/other">Go to /transition/other</router-link>
+
+  <router-view v-slot="{ Component, route }">
+    <transition
+      :name="route.meta.transition?.toString() || 'fade'"
+      mode="out-in"
+      appear
+    >
+      <component :is="Component" />
+    </transition>
+  </router-view>
+</template>
+
+<style scoped>
+/* fade */
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+/* slide-left */
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(-100%);
+}
+.slide-left-leave-to {
+  opacity: 0;
+}
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* slide-right */
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(100%);
+}
+.slide-right-leave-to {
+  opacity: 0;
+}
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+</style>
+```
+
+渲染結果：
+
+![router-55.gif](./images/gif/router-55.gif)
+
+---
+
+### 基於路由的動態過渡
+
+也可以添加一個[全局後置鉤子](#全局後置鉤子)，根據目標路由和當前路由之間的關係，根據路徑的深度動態添加信息到 `meta` 來決定使用的過渡效果。
+
+路由配置 (router/index.js)：
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // 基於路由的動態過渡
+  {
+    path: '/transition-step',
+    component: () => import('@/views/StepLayout.vue'),
+    children: [
+      {
+        path: '',
+        redirect: '/transition-step/step1',
+      },
+      {
+        path: 'step1',
+        component: () => import('@/views/Step1.vue'),
+      },
+      {
+        path: 'step1/1',
+        component: () => import('@/views/Step1_1.vue'),
+      },
+      {
+        path: 'step1/2',
+        component: () => import('@/views/Step1_2.vue'),
+      },
+    ],
+  },
+  //...
+];
+
+// 創建路由實例
+const router = createRouter({
+  //...
+});
+
+//...
+
+// 全局後置鉤子
+router.afterEach((to, from, failure) => {
+  //...
+  // 基於路由設置動態過渡效果
+  let toPath = to.path.split('/');
+  if (toPath[1] && toPath[1] === 'transition-step') {
+    const toDepth = toPath.length;
+    const fromDepth = from.path.split('/').length;
+    to.meta.transition = toDepth < fromDepth ? 'slide-right' : 'slide-left';
+  }
+});
+```
+
+StepLayout.vue：
+
+```vue
+<template>
+  <h2>StepLayout Page</h2>
+  <hr />
+
+  <router-view v-slot="{ Component, route }">
+    <transition :name="route.meta.transition?.toString()" mode="out-in" appear>
+      <component :is="Component" />
+    </transition>
+  </router-view>
+</template>
+
+<style scoped>
+/* slide-left */
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(-100%);
+}
+.slide-left-leave-to {
+  opacity: 0;
+}
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* slide-right */
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(100%);
+}
+.slide-right-leave-to {
+  opacity: 0;
+}
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+</style>
+```
+
+渲染結果：
+
+![router-56.gif](./images/gif/router-56.gif)
+
+---
+
+### 強制在複用的路由組件之間進行過渡
+
+Vue 可能會自動複用看起來相似的組件，從而忽略了過渡。可以透過添加一個 `key` 屬性來強制過渡，這也允許你在相同路由上使用不同的參數來觸發過渡。
+
+DemoLayout.vue：
+
+```vue
+<template>
+  <h2>DemoLayout Page</h2>
+  <hr />
+  <router-link to="/transition-demo/1">Go to /transition-demo/1</router-link> |
+  <router-link to="/transition-demo/2">Go to /transition-demo/2</router-link> |
+  <router-link to="/transition-demo/3">Go to /transition-demo/3</router-link> |
+  <router-link to="/transition-demo/4">Go to /transition-demo/4</router-link>
+
+  <router-view v-slot="{ Component, route }">
+    <transition name="fade" mode="out-in" appear>
+      <component :is="Component" :key="route.path" />
+    </transition>
+  </router-view>
+</template>
+
+<style scoped>
+/* fade */
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+</style>
+```
+
+Demo.vue：
+
+```vue
+<template>
+  <div
+    class="wrapper"
+    :style="`background-color: hsl(${
+      (Number($route.params.id) * 60) % 360
+    }, 100%, 75%);`"
+  >
+    <h3>Demo {{ $route.params.id }}</h3>
+  </div>
+</template>
+
+<style scoped>
+.wrapper {
+  padding: 10px;
+  min-height: 20vh;
+}
+</style>
+```
+
+路由配置 (router/index.js)：
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // 強制在複用的路由組件之間進行過渡
+  {
+    path: '/transition-demo',
+    component: () => import('@/views/DemoLayout.vue'),
+    children: [
+      {
+        path: '',
+        redirect: '/transition-demo/1',
+      },
+      {
+        path: ':id',
+        component: () => import('@/views/Demo.vue'),
+      },
+    ],
+  },
+  //...
+];
+
+//...
+```
+
+渲染結果：
+
+![router-57.gif](./images/gif/router-57.gif)

@@ -134,6 +134,9 @@ function goTo(n) {
     <router-link to="/showpost2/4">Go to /showpost2/4</router-link> |
     <router-link to="/showpost2/101">Go to /showpost2/101</router-link> |
     <router-link to="/slot">Go to /slot</router-link> |
+    <router-link to="/transition">Go to /transition</router-link> |
+    <router-link to="/transition-step">Go to /transition-step</router-link> |
+    <router-link to="/transition-demo">Go to /transition-demo</router-link>
   </nav>
 
   <section>
