@@ -258,6 +258,18 @@ const routes = [
       },
     ],
   },
+  // 數據獲取 - ShowPost 頁面
+  {
+    path: '/showpost/:postId',
+    name: 'ShowPost',
+    component: () => import('@/views/ShowPost.vue'),
+  },
+  // 數據獲取 - ShowPost2 頁面
+  {
+    path: '/showpost2/:postId',
+    name: 'ShowPost2',
+    component: () => import('@/views/ShowPost2.vue'),
+  },
   // 設置 404 NotFound 頁面
   {
     path: '/:pathMatch(.*)',

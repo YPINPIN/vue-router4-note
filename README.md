@@ -54,6 +54,8 @@
 
 - [路由元信息](#路由元信息)
 
+- [數據獲取的方式](#數據獲取的方式)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -2943,3 +2945,177 @@ function hasAuth() {
 渲染結果：
 
 ![router-48.gif](./images/gif/router-48.gif)
+
+## 數據獲取的方式
+
+有時進入一個路由之後，需要從伺服器獲取數據，可以通過以下兩種方式來實現。
+
+### 1.導航完成之後獲取數據
+
+這種方式會馬上導航並渲染組件，並在組件中實現獲取數據。可以在獲取數據期間添加 loading 狀態顯示。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // 數據獲取 - ShowPost 頁面
+  {
+    path: '/showpost/:postId',
+    name: 'ShowPost',
+    component: () => import('@/views/ShowPost.vue'),
+  },
+  //...
+];
+
+//...
+```
+
+設置 ShowPost 頁面：
+
+```vue
+<script setup>
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+const loading = ref(false);
+const post = ref(null);
+const error = ref(null);
+
+watch(() => route.params.postId, fetchData, { immediate: true });
+
+async function fetchData(postId) {
+  error.value = null;
+  post.value = null;
+  loading.value = true;
+
+  try {
+    const res = await fetch(
+      `https://jsonplaceholder.typicode.com/posts/${postId}`
+    );
+    if (res.ok) {
+      // Promise resolved and HTTP status is successful
+      post.value = await res.json();
+    } else {
+      // Custom message for failed HTTP codes
+      if (res.status === 404) throw new Error('404, Not found');
+      // For any other server error
+      throw new Error(res.status);
+    }
+  } catch (err) {
+    error.value = err.toString();
+  } finally {
+    loading.value = false;
+  }
+}
+</script>
+
+<template>
+  <h2>ShowPost page</h2>
+  <hr />
+  <div v-if="loading" class="loading">Loading...</div>
+  <div v-if="error" class="error">{{ error }}</div>
+  <div v-if="post" class="content">
+    <h3>title: {{ post.title }}</h3>
+    <p>possId: {{ post.id }}</p>
+    <p>content: {{ post.body }}</p>
+  </div>
+</template>
+```
+
+渲染結果：
+
+![router-49.gif](./images/gif/router-49.gif)
+
+### 2.導航完成之前先獲取數據
+
+這種方式是**在導航轉入新的路由之前獲取數據**。
+
+可以在組件中的導航守衛 `beforeRouteEnter` 中獲取數據，獲得數據之後再傳遞數據給 `next` 的回調函數處理，可以用來將數據傳遞給組件實例。
+
+**在獲取數據完成之前使用者會停留在原本的頁面**，因此建議顯示一些進度條或其他提示信息，如果獲取失敗，也需要展示一些錯誤提示。
+
+> 需要注意的是 `beforeRouteEnter` 只會在第一次進入路由時調用，可以搭配 `beforeRouteUpdate` 使用。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // 數據獲取 - ShowPost2 頁面
+  {
+    path: '/showpost2/:postId',
+    name: 'ShowPost2',
+    component: () => import('@/views/ShowPost2.vue'),
+  },
+  //...
+];
+
+//...
+```
+
+設置 ShowPost2 頁面：
+
+```vue
+<script>
+import { getPost } from '@/utility/api.js';
+// 全局控制 loading 狀態
+import { loading } from '@/utility/loading.js';
+
+export default {
+  async beforeRouteEnter(to, from, next) {
+    // 顯示 loading
+    loading.set(true);
+    const data = await getPost(to.params.postId);
+    next((vm) => {
+      // 通過 vm 訪問組件實例方法傳遞數據
+      vm.setData(data);
+    });
+  },
+  async beforeRouteUpdate(to, from) {
+    loading.set(true);
+    const data = await getPost(to.params.postId);
+    this.setData(data);
+  },
+};
+</script>
+
+<script setup>
+import { ref } from 'vue';
+
+const post = ref(null);
+const error = ref(null);
+
+function setData(data) {
+  post.value = data.post;
+  error.value = data.error;
+  // 關閉 loading
+  loading.set(false);
+}
+
+// 暴露方法
+defineExpose({
+  setData,
+});
+</script>
+
+<template>
+  <h2>ShowPost2 page</h2>
+  <hr />
+  <div v-if="error" class="error">{{ error }}</div>
+  <div v-if="post" class="content">
+    <h3>title: {{ post.title }}</h3>
+    <p>possId: {{ post.id }}</p>
+    <p>content: {{ post.body }}</p>
+  </div>
+</template>
+```
+
+渲染結果：
+
+![router-50.gif](./images/gif/router-50.gif)

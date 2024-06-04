@@ -1,6 +1,8 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router';
 import { useHead } from '@unhead/vue';
+import Loading from '@/components/Loading.vue';
+import { loading } from '@/utility/loading.js';
 
 const router = useRouter();
 const route = useRoute();
@@ -124,7 +126,13 @@ function goTo(n) {
     <router-link to="/test/2">Go to /test/2</router-link> |
     <router-link to="/test/1?q=123">Go to /test/1?q=123</router-link> |
     <router-link to="/test/2#main">Go to /test/2#main</router-link> |
-    <router-link to="/comments">Go to /comments</router-link>
+    <router-link to="/comments">Go to /comments</router-link> |
+    <router-link to="/showpost/1">Go to /showpost/1</router-link> |
+    <router-link to="/showpost/2">Go to /showpost/2</router-link> |
+    <router-link to="/showpost/101">Go to /showpost/101</router-link> |
+    <router-link to="/showpost2/3">Go to /showpost2/3</router-link> |
+    <router-link to="/showpost2/4">Go to /showpost2/4</router-link> |
+    <router-link to="/showpost2/101">Go to /showpost2/101</router-link>
   </nav>
 
   <section>
@@ -151,6 +159,10 @@ function goTo(n) {
       <router-view />
     </main>
   </section>
+
+  <Teleport v-if="loading.value" to="body">
+    <Loading />
+  </Teleport>
 </template>
 
 <style scoped>
