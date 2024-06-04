@@ -270,6 +270,23 @@ const routes = [
     name: 'ShowPost2',
     component: () => import('@/views/ShowPost2.vue'),
   },
+  //  router-view 插槽
+  {
+    path: '/slot',
+    component: () => import('@/views/SlotLayout.vue'),
+    children: [
+      {
+        path: 'one',
+        name: 'SlotComp1',
+        component: () => import('@/views/SlotComp1.vue'),
+      },
+      {
+        path: 'two',
+        name: 'SlotComp2',
+        component: () => import('@/views/SlotComp2.vue'),
+      },
+    ],
+  },
   // 設置 404 NotFound 頁面
   {
     path: '/:pathMatch(.*)',

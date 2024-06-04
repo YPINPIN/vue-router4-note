@@ -56,6 +56,8 @@
 
 - [數據獲取的方式](#數據獲取的方式)
 
+- [router-view 插槽](#router-view-插槽)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -3119,3 +3121,165 @@ defineExpose({
 渲染結果：
 
 ![router-50.gif](./images/gif/router-50.gif)
+
+## router-view 插槽
+
+`<router-view>` 組件暴露了一個插槽，可以用來渲染路由組件。
+
+以下程式碼等同於不帶插槽的 `<router-view />`，但是插槽可以提供額外的擴展性。
+
+SlotLayout.vue：
+
+```vue
+<template>
+  <h2>SlotLayout Page</h2>
+  <hr />
+  <router-link to="/slot/one">Go to /slot/one</router-link> |
+  <router-link to="/slot/two">Go to /slot/two</router-link>
+
+  <router-view v-slot="{ Component }">
+    <component :is="Component" />
+  </router-view>
+</template>
+```
+
+路由配置 (router/index.js)：
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  //  router-view 插槽
+  {
+    path: '/slot',
+    component: () => import('@/views/SlotLayout.vue'),
+    children: [
+      {
+        path: 'one',
+        name: 'SlotComp1',
+        component: () => import('@/views/SlotComp1.vue'),
+      },
+      {
+        path: 'two',
+        name: 'SlotComp2',
+        component: () => import('@/views/SlotComp2.vue'),
+      },
+    ],
+  },
+  //...
+];
+
+//...
+```
+
+渲染結果：
+
+![router-51.gif](./images/gif/router-51.gif)
+
+---
+
+### KeepAlive & Transition
+
+當在使用 `<keep-alive>` 組件時，通常想要緩存的是路由組件，而不是 `
+<router-view>` 本身，因此可以將 `<keep-alive>` 組件放置在插槽內。
+
+SlotLayout.vue：
+
+```vue
+<template>
+  <h2>SlotLayout Page</h2>
+  <hr />
+  <router-link to="/slot/one">Go to /slot/one</router-link> |
+  <router-link to="/slot/two">Go to /slot/two</router-link>
+
+  <router-view v-slot="{ Component }">
+    <keep-alive>
+      <component :is="Component" />
+    </keep-alive>
+  </router-view>
+</template>
+```
+
+渲染結果：
+
+![router-52.gif](./images/gif/router-52.gif)
+
+使用 `<transition>` 組件來設置路由組件的切換過渡效果時，也是一樣的用法，並且也可以搭配 `<keep-alive>` 使用。
+
+SlotLayout.vue：
+
+```vue
+<template>
+  <h2>SlotLayout Page</h2>
+  <hr />
+  <router-link to="/slot/one">Go to /slot/one</router-link> |
+  <router-link to="/slot/two">Go to /slot/two</router-link>
+
+  <router-view v-slot="{ Component }">
+    <transition mode="out-in">
+      <keep-alive>
+        <component :is="Component" />
+      </keep-alive>
+    </transition>
+  </router-view>
+</template>
+
+<style scoped>
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
+}
+.v-enter-active,
+.v-leave-active {
+  transition: opacity 0.5s ease;
+}
+</style>
+```
+
+渲染結果：
+
+![router-53.gif](./images/gif/router-53.gif)
+
+---
+
+### 模板引用
+
+使用插槽可以讓我們**直接將模板引用放置在路由組件上**。
+
+SlotLayout.vue：
+
+```vue
+<script setup>
+import { ref } from 'vue';
+const comp = ref(null);
+
+function showCount() {
+  console.log('current count: ', comp.value.count);
+}
+</script>
+
+<template>
+  <h2>SlotLayout Page</h2>
+  <hr />
+  <router-link to="/slot/one">Go to /slot/one</router-link> |
+  <router-link to="/slot/two">Go to /slot/two</router-link> |
+  <button @click="showCount">showCount</button>
+
+  <router-view v-slot="{ Component }">
+    <transition mode="out-in">
+      <keep-alive>
+        <component :is="Component" ref="comp" />
+      </keep-alive>
+    </transition>
+  </router-view>
+</template>
+
+<!-- 省略 -->
+```
+
+渲染結果：
+
+![router-54.gif](./images/gif/router-54.gif)
