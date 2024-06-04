@@ -3183,8 +3183,7 @@ const routes = [
 
 ### KeepAlive & Transition
 
-當在使用 `<keep-alive>` 組件時，通常想要緩存的是路由組件，而不是 `
-<router-view>` 本身，因此可以將 `<keep-alive>` 組件放置在插槽內。
+當在使用 `<keep-alive>` 組件時，通常想要緩存的是路由組件，而不是 `<router-view>` 本身，因此可以將 `<keep-alive>` 組件放置在插槽內。
 
 SlotLayout.vue：
 
