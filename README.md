@@ -60,6 +60,8 @@
 
 - [過渡動畫效果](#過渡動畫效果)
 
+- [滾動行為 (Scroll Behavior)](#滾動行為-scroll-behavior)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -3612,3 +3614,273 @@ const routes = [
 渲染結果：
 
 ![router-57.gif](./images/gif/router-57.gif)
+
+## 滾動行為 (Scroll Behavior)
+
+使用前端路由，當切換到新路由時，想要頁面滾到頂部或是重新加載頁面時保持原先的滾動位置，可以在創建 `router` 實例時，提供一個 `scrollBehavior` 方法。
+
+> 注意：此功能只在支持 `history.pushState` 的瀏覽器中可用。
+
+### scrollBehavior 函數
+
+會接收 `to` 和 `from` 兩個參數，第三個參數 `savedPosition` 只有當這是一個 `popstate` 導航時才可用 (透過瀏覽器的上一頁/下一頁按鈕或是重新整理觸發)。
+
+> `popstate` 參考資料：[MDN](https://developer.mozilla.org/zh-TW/docs/Web/API/Window/popstate_event)。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  // 指定模式
+  history: createWebHistory(import.meta.env.BASE_URL),
+  // 設定前面配置的路由
+  routes,
+  // 滾動行為
+  scrollBehavior(to, from, savedPosition) {
+    console.log('savedPosition:', savedPosition);
+    // return 期望滾動到哪個的位置
+  },
+});
+
+//...
+```
+
+渲染結果：
+
+![router-58.gif](./images/gif/router-58.gif)
+
+需要返回一個 [`ScrollToOptions`](https://developer.mozilla.org/en-US/docs/Web/API/Window/scroll#options) 滾動位置物件，如果返回一個 `falsy` 的值或是一個空的物件，則不會發生滾動。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  // 指定模式
+  history: createWebHistory(import.meta.env.BASE_URL),
+  // 設定前面配置的路由
+  routes,
+  // 滾動行為
+  scrollBehavior(to, from, savedPosition) {
+    // 始終滾動到頂部
+    return { top: 0 };
+  },
+});
+
+//...
+```
+
+渲染結果：
+
+![router-59.gif](./images/gif/router-59.gif)
+
+也可以通過 `el` 屬性傳遞一個 CSS 選擇器或一個 DOM 元素。在這種情況下，`top` 和 `left` 將被視為該元素的相對偏移量。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  // 指定模式
+  history: createWebHistory(import.meta.env.BASE_URL),
+  // 設定前面配置的路由
+  routes,
+  // 滾動行為
+  scrollBehavior(to, from, savedPosition) {
+    // 相對 DOM 元素
+    return {
+      el: 'main',
+      // 滾動到 main 元素上方 10 px
+      top: 10,
+    };
+  },
+});
+
+//...
+```
+
+渲染結果：
+
+![router-60.gif](./images/gif/router-60.gif)
+
+如果返回第三個參數 `savedPosition`，在按下 (上一頁/下一頁) 按鈕時，就會像瀏覽器的原生表現那樣。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  // 指定模式
+  history: createWebHistory(import.meta.env.BASE_URL),
+  // 設定前面配置的路由
+  routes,
+  // 滾動行為
+  scrollBehavior(to, from, savedPosition) {
+    // 返回 savedPosition
+    if (savedPosition) {
+      return savedPosition;
+    } else {
+      return { top: 0 };
+    }
+  },
+});
+
+//...
+```
+
+渲染結果：
+
+![router-61.gif](./images/gif/router-61.gif)
+
+以下範例模擬模擬滾動到錨點的行為。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 配置路由規則
+const routes = [
+  //...
+  // Hash page
+  {
+    path: '/hashpage',
+    name: 'HashPage',
+    component: () => import('@/views/HashPage.vue'),
+  },
+  //...
+];
+
+// 創建路由實例
+const router = createRouter({
+  // 指定模式
+  history: createWebHistory(import.meta.env.BASE_URL),
+  // 設定前面配置的路由
+  routes,
+  // 滾動行為
+  scrollBehavior(to, from, savedPosition) {
+    // 模擬滾動到錨點
+    if (to.hash) {
+      return { el: to.hash };
+    }
+  },
+});
+
+//...
+```
+
+HashPage.vue 頁面：
+
+```vue
+<template>
+  <h2>Hash page</h2>
+  <hr />
+  <router-link :to="{ name: 'HashPage', hash: '#hash1' }"
+    >Go to /hashpage#hash1</router-link
+  >
+  |
+  <router-link :to="{ name: 'HashPage', hash: '#hash2' }"
+    >Go to /hashpage#hash2</router-link
+  >
+  <h3 id="hash1">Hash 1</h3>
+  <p>
+    Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequuntur
+    veritatis dolore culpa quia debitis soluta saepe reprehenderit natus sequi
+    reiciendis et itaque nam, ipsa rem molestias, molestiae cumque velit iure.
+  </p>
+
+  <h3 id="hash2">Hash 2</h3>
+  <p>
+    Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequuntur
+    veritatis dolore culpa quia debitis soluta saepe reprehenderit natus sequi
+    reiciendis et itaque nam, ipsa rem molestias, molestiae cumque velit iure.
+  </p>
+</template>
+
+<style scoped>
+h3 {
+  color: darkcyan;
+  border-bottom: 2px solid darkcyan;
+}
+
+p {
+  width: 300px;
+  padding: 10px;
+  background-color: lightcyan;
+  min-height: 600px;
+}
+</style>
+```
+
+渲染結果：
+
+![router-62.gif](./images/gif/router-62.gif)
+
+如果瀏覽器支持滾動行為，可以設置 `smooth` 讓它更流暢。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  // 指定模式
+  history: createWebHistory(import.meta.env.BASE_URL),
+  // 設定前面配置的路由
+  routes,
+  // 滾動行為
+  scrollBehavior(to, from, savedPosition) {
+    // 設置 behavior: 'smooth' 讓滾動更流暢
+    if (to.hash) {
+      return {
+        el: to.hash,
+        behavior: 'smooth',
+      };
+    }
+  },
+});
+
+//...
+```
+
+渲染結果：
+
+![router-63.gif](./images/gif/router-63.gif)
+
+---
+
+### 延遲滾動
+
+有時候需要在頁面中滾動之前稍微等待，例如：處理頁面過渡時，希望等待過渡結束後再滾動，可以透過返回一個 `Promise`，它可以返回所需的位置物件。
+
+以下範例在滾動前等待 500ms。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  // 指定模式
+  history: createWebHistory(import.meta.env.BASE_URL),
+  // 設定前面配置的路由
+  routes,
+  // 滾動行為
+  scrollBehavior(to, from, savedPosition) {
+    // 延遲滾動
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve({ top: 0, left: 0 });
+      }, 500);
+    });
+  },
+});
+
+//...
+```
+
+![router-64.gif](./images/gif/router-64.gif)

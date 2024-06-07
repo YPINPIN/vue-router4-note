@@ -350,6 +350,12 @@ const routes = [
       },
     ],
   },
+  // Hash page
+  {
+    path: '/hashpage',
+    name: 'HashPage',
+    component: () => import('@/views/HashPage.vue'),
+  },
   // 設置 404 NotFound 頁面
   {
     path: '/:pathMatch(.*)',
@@ -370,6 +376,41 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   // 設定前面配置的路由
   routes,
+  // 滾動行為
+  scrollBehavior(to, from, savedPosition) {
+    // console.log('savedPosition:', savedPosition);
+    // 始終滾動到頂部
+    // return { top: 0 };
+    // 相對 DOM 元素
+    // return {
+    //   el: 'main',
+    //   // 滾動到 main 元素上方 10 px
+    //   top: 10,
+    // };
+    // 返回 savedPosition
+    // if (savedPosition) {
+    //   return savedPosition;
+    // } else {
+    //   return { top: 0 };
+    // }
+    // 模擬滾動到錨點
+    // if (to.hash) {
+    //   return { el: to.hash };
+    // }
+    // 設置 behavior: 'smooth' 讓滾動更流暢
+    // if (to.hash) {
+    //   return {
+    //     el: to.hash,
+    //     behavior: 'smooth',
+    //   };
+    // }
+    // 延遲滾動
+    // return new Promise((resolve, reject) => {
+    //   setTimeout(() => {
+    //     resolve({ top: 0, left: 0 });
+    //   }, 500);
+    // });
+  },
   // 指定 active class
   // linkActiveClass: 'link-active-green',
   // linkExactActiveClass: 'link-exact-active-green',
