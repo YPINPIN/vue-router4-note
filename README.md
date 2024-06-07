@@ -62,6 +62,8 @@
 
 - [滾動行為 (Scroll Behavior)](#滾動行為-scroll-behavior)
 
+- [擴展 router-link](#擴展-router-link)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -3884,3 +3886,7 @@ const router = createRouter({
 ```
 
 ![router-64.gif](./images/gif/router-64.gif)
+
+## 擴展 router-link
+
+[官方文檔](https://router.vuejs.org/zh/guide/advanced/extending-router-link.html)
