@@ -4104,7 +4104,7 @@ function closeModal() {
 
 ![router-69.gif](./images/gif/router-69.gif)
 
-`Navigation Failure` 是帶有額外屬性的 `Error` 實例，可以根據這些屬性提供的信息知道哪些導航被阻止了以及為甚麼被阻止。
+`Navigation Failure` 是帶有額外屬性的 `Error` 實例，可以根據這些屬性提供的信息知道哪些導航被阻止了以及為什麼被阻止。
 
 要檢查導航結果的性質，可以使用 `isNavigationFailure` 函數，若忽略第二個參數，只使用 `isNavigationFailure(failure)`，將只會檢查 `failure` 是否為一個 `Navigation Failure`。
 
