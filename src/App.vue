@@ -1,9 +1,16 @@
 <script setup>
-import { useRoute, useRouter } from 'vue-router';
+import {
+  isNavigationFailure,
+  NavigationFailureType,
+  useRoute,
+  useRouter,
+} from 'vue-router';
 import { useHead } from '@unhead/vue';
 import Loading from '@/components/Loading.vue';
 import { loading } from '@/utility/loading.js';
 import CustomLink from '@/components/CustomLink.vue';
+import Modal from '@/components/Modal.vue';
+import { isModalOpen } from '@/utility/isModalOpen.js';
 
 const router = useRouter();
 const route = useRoute();
@@ -61,6 +68,35 @@ function back() {
 function goTo(n) {
   // 如果沒有那麼多的紀錄，會靜默失敗
   router.go(n);
+}
+
+// 檢測導航結果
+async function goToPath(path) {
+  const failure = await router.push(path);
+  if (isNavigationFailure(failure, NavigationFailureType.aborted)) {
+    // 導航被阻止，給使用者顯示一個提示
+    alert('Navigation Failure aborted');
+    console.log(
+      `Failure -- to: ${failure.to.path}, from: ${failure.from.path}`
+    );
+  } else if (isNavigationFailure(failure, NavigationFailureType.duplicated)) {
+    // 導航重複
+    alert('Navigation Failure duplicated');
+  } else {
+    // 導航成功關閉選單
+    closeModal();
+  }
+}
+function closeModal() {
+  isModalOpen.set(false);
+}
+async function goToHome() {
+  await router.push('/home');
+  const redirectedFrom = router.currentRoute.value.redirectedFrom;
+  if (redirectedFrom) {
+    // redirectedFrom 是解析出的路由地址，就像導航守衛中的 to 和 from
+    console.log('redirectedFrom: ', redirectedFrom);
+  }
 }
 </script>
 
@@ -162,7 +198,9 @@ function goTo(n) {
     <button @click="back">back</button> |
     <button @click="goTo(3)">forward 3</button> |
     <button @click="goTo(-100)">back 100</button> |
-    <button @click="goTo(100)">forward 100</button>
+    <button @click="goTo(100)">forward 100</button> |
+    <button @click="goToPath('/loadpost')">Go to /loadpost</button> |
+    <button @click="goToHome()">Go to /home</button>
   </section>
 
   <section class="content">
@@ -177,6 +215,10 @@ function goTo(n) {
 
   <Teleport v-if="loading.value" to="body">
     <Loading />
+  </Teleport>
+
+  <Teleport to="body">
+    <Modal />
   </Teleport>
 </template>
 

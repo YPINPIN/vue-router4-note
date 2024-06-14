@@ -64,6 +64,8 @@
 
 - [擴展 router-link](#擴展-router-link)
 
+- [導航結果](#導航結果)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -4030,3 +4032,205 @@ const router = createRouter({
 - 渲染結果：
 
   ![router-65.gif](./images/gif/router-65.gif)
+
+## 導航結果
+
+當使用 `<router-link>` 組件時，Vue Router 會自動調用 `router.push` 來觸發一次導航。正常情況會依照預期的將使用者導航到一個新的頁面，但也有少數情況下使用者將會留在同一個頁面：
+
+- 使用者已經位於嘗試導航到的頁面。
+
+- 一個導航守衛通過調用 `return false` 中斷了這次導航。
+
+- 當前的導航守衛還沒有完成時，一個新的導航守衛出現了。
+
+- 一個導航守衛通過返回一個新的位置，重新導向到其他地方 (例如：`return '/login'`)。
+
+- 一個導航守衛拋出了一個 `Error`。
+
+假設我們需要在導航到新頁面後隱藏選單，以下寫法將會馬上關閉選單。
+
+```javascript
+function goToPath(path) {
+  router.push(path);
+  closeModal();
+}
+function closeModal() {
+  isModalOpen.set(false);
+}
+```
+
+![router-66.gif](./images/gif/router-66.gif)
+
+因為導航是異步的，所以需要 `await` `router.push` 返回的 `Promise`，現在當導航完成，選單就會關閉。
+
+```javascript
+async function goToPath(path) {
+  await router.push(path);
+  closeModal();
+}
+function closeModal() {
+  isModalOpen.set(false);
+}
+```
+
+![router-67.gif](./images/gif/router-67.gif)
+
+但如果導航被阻止，選單也還是會跟著關閉。
+
+![router-68.gif](./images/gif/router-68.gif)
+
+---
+
+### 檢測導航 Failure
+
+當導航被阻止導致使用者停留在同一個頁面上時，`router.push` 返回的 `Promise` 解析值將會是 `Navigation Failure`，否則它將是一個 `falsy` 值 (通常為 `undefined`)。
+
+因此可以以此區分是否成功導航到新頁面，來正確的關閉選單。
+
+```javascript
+async function goToPath(path) {
+  const failure = await router.push(path);
+  if (failure) {
+    // 導航被阻止
+  } else {
+    // 導航成功關閉選單
+    closeModal();
+  }
+}
+function closeModal() {
+  isModalOpen.set(false);
+}
+```
+
+![router-69.gif](./images/gif/router-69.gif)
+
+`Navigation Failure` 是帶有額外屬性的 `Error` 實例，可以根據這些屬性提供的信息知道哪些導航被阻止了以及為甚麼被阻止。
+
+要檢查導航結果的性質，可以使用 `isNavigationFailure` 函數，若忽略第二個參數，只使用 `isNavigationFailure(failure)`，將只會檢查 `failure` 是否為一個 `Navigation Failure`。
+
+#### § 導航失敗類型 NavigationFailureType
+
+- aborted
+
+  在導航守衛中返回 `false` 中斷了本次導航。
+
+- cancelled
+
+  在當前的導航還沒有完成時又有了一個新的導航。例如：在等待導航守衛的過程中又調用了 `router.push`。
+
+- duplicated
+
+  導航被阻止，因為已經在目標位置了。
+
+```javascript
+import { isNavigationFailure, NavigationFailureType } from 'vue-router';
+
+// 檢測導航結果
+async function goToPath(path) {
+  const failure = await router.push(path);
+  if (isNavigationFailure(failure, NavigationFailureType.aborted)) {
+    // 導航被阻止，給使用者顯示一個提示
+    alert('Navigation Failure aborted');
+  } else if (isNavigationFailure(failure, NavigationFailureType.duplicated)) {
+    // 導航重複
+    alert('Navigation Failure duplicated');
+  } else {
+    // 導航成功關閉選單
+    closeModal();
+  }
+}
+function closeModal() {
+  isModalOpen.set(false);
+}
+```
+
+![router-70.gif](./images/gif/router-70.gif)
+
+---
+
+### 全局檢測導航是否失敗
+
+可以使用 `router.afterEach()` 檢測，接收 `Navigation Failure` 作為第三個參數，表示路由跳轉失敗。
+
+```javascript
+import { createRouter, createWebHistory } from 'vue-router';
+//...
+
+// 創建路由實例
+const router = createRouter({
+  //...
+});
+
+//...
+
+// 全局後置鉤子
+router.afterEach((to, from, failure) => {
+  console.log('router afterEach--');
+  if (failure) {
+    // 重複路由不顯示錯誤
+    if (!isNavigationFailure(failure, NavigationFailureType.duplicated)) {
+      sendToAnalytics(to, from, failure);
+    }
+  }
+});
+
+function sendToAnalytics(to, from, failure) {
+  console.log('sendToAnalytics---', failure);
+}
+
+//...
+```
+
+---
+
+### 導航失敗的屬性
+
+所有的導航失敗都會暴露 `to` 和 `from` 屬性，可以反映失敗導航的當前位置和目標位置。
+
+```javascript
+import { isNavigationFailure, NavigationFailureType } from 'vue-router';
+
+// 檢測導航結果
+async function goToPath(path) {
+  const failure = await router.push(path);
+  if (isNavigationFailure(failure, NavigationFailureType.aborted)) {
+    // 導航被阻止，給使用者顯示一個提示
+    alert('Navigation Failure aborted');
+    console.log(
+      `Failure -- to: ${failure.to.path}, from: ${failure.from.path}`
+    );
+  } else if (isNavigationFailure(failure, NavigationFailureType.duplicated)) {
+    // 導航重複
+    alert('Navigation Failure duplicated');
+  } else {
+    // 導航成功關閉選單
+    closeModal();
+  }
+}
+function closeModal() {
+  isModalOpen.set(false);
+}
+```
+
+![router-71.gif](./images/gif/router-71.gif)
+
+---
+
+### 檢測重新導向
+
+當在導航守衛中返回一個新的位置時，會觸發一個新的導航來覆蓋正在進行的導航。
+
+與其它返回值不同的是，**重新導向不會阻止導航，而是創建一個新的導航**，因此可以通過讀取路由地址中的 `redirectedFrom` 屬性，對其進行不同的檢查。
+
+```javascript
+async function goToHome() {
+  await router.push('/home');
+  const redirectedFrom = router.currentRoute.value.redirectedFrom;
+  if (redirectedFrom) {
+    // redirectedFrom 是解析出的路由地址，就像導航守衛中的 to 和 from
+    console.log('redirectedFrom: ', redirectedFrom);
+  }
+}
+```
+
+![router-72.gif](./images/gif/router-72.gif)

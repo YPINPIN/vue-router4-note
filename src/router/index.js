@@ -6,6 +6,8 @@ import {
 } from 'vue-router';
 // 靜態導入
 import Home from '@/views/Home.vue';
+// 全局控制 loading 狀態
+import { loading } from '@/utility/loading.js';
 
 // 配置路由規則
 const routes = [
@@ -356,6 +358,13 @@ const routes = [
     name: 'HashPage',
     component: () => import('@/views/HashPage.vue'),
   },
+  // 導航結果測試頁面
+  {
+    path: '/loadpost',
+    name: 'LoadPost',
+    component: () => import('@/views/LoadPost.vue'),
+    meta: { requiresLoad: true },
+  },
   // 設置 404 NotFound 頁面
   {
     path: '/:pathMatch(.*)',
@@ -469,6 +478,26 @@ router.beforeResolve(async (to) => {
       }
     }
   }
+  if (to.meta.requiresLoad) {
+    // 顯示 loading
+    loading.set(true);
+    try {
+      await askForLoad();
+      // 關閉 loading
+      loading.set(false);
+    } catch (error) {
+      console.log(error);
+      // 關閉 loading
+      loading.set(false);
+      if (error === 'NotLoadError') {
+        // 處理錯誤並取消導航
+        return false;
+      } else {
+        // 意料之外的錯誤，取消導航並把錯誤傳給全局處理器
+        throw error;
+      }
+    }
+  }
 });
 
 // 模擬獲取權限
@@ -480,6 +509,20 @@ function askForCameraPermission() {
         resolve();
       } else {
         reject('NotAllowedError');
+      }
+    }, 2000);
+  });
+}
+
+// 模擬 load
+function askForLoad() {
+  console.log('askForLoad...');
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (Math.random() > 0.5) {
+        resolve();
+      } else {
+        reject('NotLoadError');
       }
     }, 2000);
   });
