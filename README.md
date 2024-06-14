@@ -3889,4 +3889,144 @@ const router = createRouter({
 
 ## 擴展 router-link
 
-[官方文檔](https://router.vuejs.org/zh/guide/advanced/extending-router-link.html)
+可以透過擴展來自定義 `<router-link>` 組件，方便在整個應用中重複使用它們。例如處理外部連結或是添加而外的 `props` 等等。
+
+詳細介紹可以查看此[官方文檔](https://router.vuejs.org/guide/advanced/extending-router-link.html)。
+
+以下範例為自定義一個處理外部連結以及樣式的 `<router-link>` 組件。
+
+- 設置 AppLink.vue 自定義連結：
+
+  新增 `inactiveClass` prop，以及根據是否為外部連結進行對應的模板渲染，並且透過在 `<router-link>` 組件上設定 `custom`、`v-slot` 來自定義連結。
+
+  > 補充：[`v-bind="$props"`](https://medium.com/vuejs-tips/v-bind-props-1649cbd5f034)、[`startsWith()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/startsWith)。
+
+  ```vue
+  <script setup>
+  import { RouterLink } from 'vue-router';
+  import { computed } from 'vue';
+
+  // 關閉 Attributes 繼承
+  defineOptions({
+    inheritAttrs: false,
+  });
+
+  // 新增設置 props
+  const props = defineProps({
+    ...RouterLink.props,
+    inactiveClass: String,
+  });
+
+  // 是否為外部連結
+  const isExternalLink = computed(() => {
+    return typeof props.to == 'string' && props.to.startsWith('http');
+  });
+  </script>
+
+  <template>
+    <a
+      v-if="isExternalLink"
+      v-bind="$attrs"
+      :href="props.to"
+      :class="inactiveClass"
+      target="_blank"
+      ><slot
+    /></a>
+    <router-link
+      v-else
+      v-bind="$props"
+      custom
+      v-slot="{
+        // the resolved route object
+        route,
+        // the href to use in a link
+        href,
+        // boolean ref indicating if the link is active
+        isActive,
+        // boolean ref indicating if the link is exactly active
+        isExactActive,
+        // function to navigate to the link
+        navigate,
+      }"
+    >
+      <a
+        v-bind="$attrs"
+        :href="href"
+        @click="navigate"
+        :class="[
+          isActive ? activeClass : inactiveClass,
+          isExactActive ? exactActiveClass : '',
+        ]"
+      >
+        <slot />
+      </a>
+    </router-link>
+  </template>
+  ```
+
+- 設置 CustomLink.vue：
+
+  使用 `AppLink` 組件並指定對應的 class 樣式。
+
+  ```vue
+  <script setup>
+  import AppLink from '@/components/AppLink.vue';
+  </script>
+
+  <template>
+    <AppLink
+      v-bind="$attrs"
+      class="custom-link"
+      active-class="custom-link-active-green"
+      exact-active-class="custom-link-exact-active-green"
+      inactive-class="custom-link-inactive"
+    >
+      <slot />
+    </AppLink>
+  </template>
+
+  <!-- 添加連結樣式 -->
+  <style>
+  /* 添加指定連結樣式 */
+  .custom-link {
+    font-size: 30px;
+    text-decoration: none;
+    margin-right: 10px;
+  }
+  .custom-link:hover {
+    text-decoration: underline;
+  }
+  .custom-link-active-green {
+    color: orange;
+  }
+  .custom-link-exact-active-green {
+    color: darkgoldenrod;
+  }
+  .custom-link-inactive {
+    color: darkslategrey;
+  }
+  </style>
+  ```
+
+- App.vue 中使用 `CustomLink` 組件：
+
+  ```vue
+  <template>
+    <!-- 省略 -->
+
+    <section>
+      <p>Custom Link：</p>
+      <CustomLink to="https://www.google.com/">Go to google</CustomLink>
+      <CustomLink :to="{ name: 'User', params: { userId: '1' } }"
+        >Go to User 1</CustomLink
+      >
+      <CustomLink to="/users/1/profile">Go to User 1 Profile</CustomLink>
+    </section>
+
+    <!-- 省略 -->
+  </template>
+  ```
+
+- 渲染結果：
+
+  ![router-65.gif](./images/gif/router-65.gif)

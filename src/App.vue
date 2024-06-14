@@ -3,6 +3,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useHead } from '@unhead/vue';
 import Loading from '@/components/Loading.vue';
 import { loading } from '@/utility/loading.js';
+import CustomLink from '@/components/CustomLink.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -141,7 +142,16 @@ function goTo(n) {
   </nav>
 
   <section>
-    <p>Programmatic Navigation</p>
+    <p>Custom Link：</p>
+    <CustomLink to="https://www.google.com/">Go to google</CustomLink>
+    <CustomLink :to="{ name: 'User', params: { userId: '1' } }"
+      >Go to User 1</CustomLink
+    >
+    <CustomLink to="/users/1/profile">Go to User 1 Profile</CustomLink>
+  </section>
+
+  <section>
+    <p>Programmatic Navigation：</p>
     <button @click="goToUser4">Go to User 4</button> |
     <button @click="goToUser5">Go to User 5</button> |
     <button @click="goToUser6">Go to User 6</button> |
