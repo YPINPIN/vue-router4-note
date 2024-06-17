@@ -66,6 +66,8 @@
 
 - [導航結果](#導航結果)
 
+- [動態路由](#動態路由)
+
 ## 安裝 Vue Router
 
 ### 1. 基於 Vite 創建新專案
@@ -4234,3 +4236,609 @@ async function goToHome() {
 ```
 
 ![router-72.gif](./images/gif/router-72.gif)
+
+## 動態路由
+
+[💻Demo](https://vue-router-dynamic.vercel.app/) | [📝Code](https://github.com/YPINPIN/vue-router-dynamic)
+
+對路由的添加通常是通過 `routes` 選項來配置的，但是在某些情況下可能想要**在應用程式運行中動態的添加或刪除路由**。
+
+### 初始路由
+
+使用 `routes` 選項來配置初始路由。
+
+- 路由配置 (router/index.js)：
+
+  ```javascript
+  import { createRouter, createWebHistory } from 'vue-router';
+
+  // 配置路由規則
+  const routes = [
+    {
+      path: '/',
+      name: 'Home',
+      component: () => import('@/views/Home.vue'),
+    },
+    // 設置 404 NotFound 頁面
+    {
+      path: '/:pathMatch(.*)',
+      name: 'NotFound',
+      component: () => import('@/views/NotFound.vue'),
+    },
+  ];
+
+  // 創建路由實例
+  const router = createRouter({
+    // 指定模式
+    history: createWebHistory(import.meta.env.BASE_URL),
+    // 設定前面配置的路由
+    routes,
+  });
+
+  // 共享路由實例
+  export default router;
+  ```
+
+- Home.vue：
+
+  ```vue
+  <template>
+    <h2>Home page</h2>
+  </template>
+  ```
+
+- NotFound.vue：
+
+  ```vue
+  <script setup>
+  import { useRoute } from 'vue-router';
+  const route = useRoute();
+  </script>
+
+  <template>
+    <h2>404 Not Found.</h2>
+    <p>path: /{{ route.params.pathMatch }}</p>
+  </template>
+  ```
+
+- App.vue：
+
+  ```vue
+  <template>
+    <h1>Hello Vue Router4!</h1>
+    <p><strong>Current route path:</strong> {{ $route.fullPath }}</p>
+    <hr />
+
+    <nav>
+      <router-link to="/">Go to Home</router-link> |
+      <router-link to="/about">Go to About</router-link> |
+      <router-link to="/admin">Go to Admin</router-link>
+    </nav>
+
+    <main>
+      <router-view />
+    </main>
+  </template>
+
+  <style scoped>
+  main {
+    margin-top: 5px;
+    padding: 10px;
+    background-color: lightblue;
+  }
+  </style>
+  ```
+
+渲染結果：
+
+![router-73.gif](./images/gif/router-73.gif)
+
+---
+
+### 查看現有路由
+
+- `router.hasRoute()`
+
+  檢查路由是否存在，傳入 `name` (要檢查的路由名稱)，返回 `boolean`。
+
+- `router.getRoutes()`
+
+  獲取一個包含所有路由配置的陣列。
+
+---
+
+### 添加一級路由
+
+透過 `router.addRoute()` 可以動態的添加路由。
+
+- App.vue：
+
+  ```vue
+  <script setup>
+  import { useRouter } from 'vue-router';
+  import { onMounted } from 'vue';
+
+  const router = useRouter();
+
+  function addNormalRoutes() {
+    // 添加一級路由
+    router.addRoute({
+      path: '/about',
+      name: 'About',
+      component: () => import('@/views/About.vue'),
+    });
+    router.addRoute({
+      path: '/admin',
+      name: 'Admin',
+      component: () => import('@/views/AdminTip.vue'),
+    });
+    // 獲取一個包含所有路由配置的陣列
+    console.log('allRoutes: ', router.getRoutes());
+  }
+
+  onMounted(() => {
+    console.log('onMounted');
+    addNormalRoutes();
+  });
+  </script>
+
+  <!-- 省略 -->
+  ```
+
+- About.vue：
+
+  ```vue
+  <template>
+    <h2>About page</h2>
+  </template>
+  ```
+
+- AdminTip.vue：
+
+  ```vue
+  <template>
+    <h2>Admin page</h2>
+    <section>
+      <p>Please Login first.</p>
+    </section>
+  </template>
+
+  <style scoped>
+  section {
+    padding: 10px;
+    background-color: darkgoldenrod;
+  }
+  </style>
+  ```
+
+渲染結果：
+
+![router-74.gif](./images/gif/router-74.gif)
+
+需要特別注意，若是在動態添加的路由(例如：`/about` )下添加新路由，**則必須要手動調用 `router.replace()` 來改變當前的位置來顯示對應頁面**。
+
+以上的範例中未手動調用 `router.replace()` 時會無法獲取到新添加的路由頁面：
+
+![router-75.gif](./images/gif/router-75.gif)
+
+修改未添加路由時對應到的 NotFound.vue 頁面：
+
+```vue
+<script setup>
+import { useRoute, useRouter } from 'vue-router';
+const route = useRoute();
+const router = useRouter();
+// 需要手動調用 router.replace() 來改變當前的位置顯示對應頁面
+router.replace(route.fullPath);
+</script>
+
+<template>
+  <h2>404 Not Found.</h2>
+  <p>path: /{{ route.params.pathMatch }}</p>
+</template>
+```
+
+![router-76.gif](./images/gif/router-76.gif)
+
+---
+
+### 刪除路由
+
+有以下幾種不同的方法來刪除現有的路由。
+
+> 注意：當路由被刪除時，所有的別名及子路由也會被同時刪除。
+
+#### § 1. 可以通過使用 `router.removeRoute()` 按名稱刪除路由
+
+可以使用 `router.hasRoute()` 先檢查路由是否存在，再調用 `router.removeRoute()` 按名稱刪除路由。
+
+- App.vue：
+
+  ```vue
+  <script setup>
+  import { useRouter } from 'vue-router';
+  import { onMounted } from 'vue';
+
+  const router = useRouter();
+
+  function addNormalRoutes() {
+    // 添加一級路由
+    router.addRoute({
+      path: '/about',
+      name: 'About',
+      component: () => import('@/views/About.vue'),
+    });
+    router.addRoute({
+      path: '/admin',
+      name: 'Admin',
+      component: () => import('@/views/AdminTip.vue'),
+    });
+
+    // 使用 hasRoute 檢查路由是否存在
+    if (router.hasRoute('Admin')) {
+      // 1. 可以通過使用 router.removeRoute() 按名稱刪除路由
+      router.removeRoute('Admin');
+    }
+
+    // 獲取一個包含所有路由配置的陣列
+    console.log('allRoutes: ', router.getRoutes());
+  }
+
+  onMounted(() => {
+    console.log('onMounted');
+    addNormalRoutes();
+  });
+  </script>
+
+  <!-- 省略 -->
+  ```
+
+- 渲染結果：
+
+  ![router-77.gif](./images/gif/router-77.gif)
+
+#### § 2. 通過添加一個名稱衝突的路由
+
+若重複添加相同 `name` 的路由，則會先刪除原路由，再添加新路由。
+
+- App.vue：
+
+  ```vue
+  <script setup>
+  import { useRouter } from 'vue-router';
+  import { onMounted, ref } from 'vue';
+
+  const router = useRouter();
+  // 是否為 Admin
+  const isAdmin = ref(localStorage.getItem('isAdmin'));
+
+  function addNormalRoutes() {
+    // 省略
+  }
+
+  function addAdminRoutes() {
+    if (!router.hasRoute('About')) {
+      router.addRoute({
+        path: '/about',
+        name: 'About',
+        component: () => import('@/views/About.vue'),
+      });
+    }
+    // 2. 若重複添加相同 name 的路由，則會先刪除原路由，再添加新路由
+    router.addRoute({
+      path: '/admin',
+      name: 'Admin',
+      component: () => import('@/views/Admin.vue'),
+    });
+
+    // 獲取一個包含所有路由配置的陣列
+    console.log('allRoutes: ', router.getRoutes());
+  }
+
+  onMounted(() => {
+    console.log('onMounted');
+    isAdmin.value ? addAdminRoutes() : addNormalRoutes();
+  });
+
+  function login() {
+    console.log('login');
+    localStorage.setItem('isAdmin', true);
+    isAdmin.value = true;
+    addAdminRoutes();
+    // 需要手動調用 router.replace() 來改變當前的位置顯示對應頁面
+    router.replace(router.currentRoute.value.fullPath);
+  }
+  function logout() {
+    console.log('logout');
+    localStorage.removeItem('isAdmin');
+    isAdmin.value = null;
+    addNormalRoutes();
+    // 需要手動調用 router.replace() 來改變當前的位置顯示對應頁面
+    router.replace(router.currentRoute.value.fullPath);
+  }
+  </script>
+
+  <template>
+    <h1>Hello Vue Router4!</h1>
+    <p><strong>Current route path:</strong> {{ $route.fullPath }}</p>
+    <button v-if="isAdmin" @click="logout">Admin Logout</button>
+    <button v-else @click="login">Admin Login</button>
+    <hr />
+
+    <nav>
+      <router-link to="/">Go to Home</router-link> |
+      <router-link to="/about">Go to About</router-link> |
+      <router-link to="/admin">Go to Admin</router-link>
+    </nav>
+
+    <main>
+      <router-view />
+    </main>
+  </template>
+
+  <style scoped>
+  main {
+    margin-top: 5px;
+    padding: 10px;
+    background-color: lightblue;
+  }
+  </style>
+  ```
+
+- Admin.vue：
+
+  ```vue
+  <template>
+    <h2>Admin page</h2>
+    <section>
+      <p>Hello Admin.</p>
+    </section>
+  </template>
+
+  <style scoped>
+  section {
+    padding: 10px;
+    background-color: darkcyan;
+  }
+  </style>
+  ```
+
+- 渲染結果：
+
+  ![router-78.gif](./images/gif/router-78.gif)
+
+#### § 3. 通過調用 `router.addRoute()` 返回的回調
+
+當路由沒有名稱時，可以通過調用 `router.addRoute()` 返回的回調來刪除對應的路由。
+
+- App.vue：
+
+  ```vue
+  <script setup>
+  // 省略
+
+  function addNormalRoutes() {
+    // 添加一級路由
+    router.addRoute({
+      path: '/about',
+      name: 'About',
+      component: () => import('@/views/About.vue'),
+    });
+    const removeRoute = router.addRoute({
+      path: '/admin',
+      name: 'Admin',
+      component: () => import('@/views/AdminTip.vue'),
+    });
+
+    // // 使用 hasRoute 檢查路由是否存在
+    // if (router.hasRoute('Admin')) {
+    //   // 1. 可以通過使用 router.removeRoute() 按名稱刪除路由
+    //   router.removeRoute('Admin');
+    // }
+
+    // 3. 可以通過調用 `router.addRoute()` 返回的回調來刪除對應的路由
+    removeRoute();
+
+    // 獲取一個包含所有路由配置的陣列
+    console.log('allRoutes: ', router.getRoutes());
+  }
+
+  function addAdminRoutes() {
+    // 省略
+  }
+
+  // 省略
+  </script>
+
+  <!-- 省略 -->
+  ```
+
+- 渲染結果：
+
+  ![router-79.gif](./images/gif/router-79.gif)
+
+---
+
+### 添加巢狀路由
+
+可以將現有路由的 `name` 作為第一個參數傳遞給 `router.addRoute()`，將路由添加到現有的路由中，等同於使用 `children` 添加。
+
+- App.vue：
+
+  ```vue
+  <script setup>
+  import { useRouter } from 'vue-router';
+  import { onMounted, ref } from 'vue';
+
+  const router = useRouter();
+  // 是否為 Admin
+  const isAdmin = ref(localStorage.getItem('isAdmin'));
+
+  // 紀錄刪除路由函數(router.addRoute() 返回的回調)
+  const rmRoutes = ref([]);
+  // 添加刪除路由函數
+  function addRmRoutes(fn) {
+    rmRoutes.value.push(fn);
+  }
+  // 通過調用 router.addRoute() 返回的回調刪除路由，如果存在的話
+  function removeRoutes() {
+    rmRoutes.value.forEach((fn) => fn());
+  }
+
+  function addNormalRoutes() {
+    // 添加一級路由
+    router.addRoute({
+      path: '/about',
+      name: 'About',
+      component: () => import('@/views/About.vue'),
+    });
+    const removeRoute = router.addRoute({
+      path: '/admin',
+      name: 'Admin',
+      component: () => import('@/views/AdminTip.vue'),
+    });
+
+    // // 使用 hasRoute 檢查路由是否存在
+    // if (router.hasRoute('Admin')) {
+    //   // 1. 可以通過使用 router.removeRoute() 按名稱刪除路由
+    //   router.removeRoute('Admin');
+    // }
+
+    // // 3. 可以通過調用 `router.addRoute()` 返回的回調來刪除對應的路由
+    // removeRoute();
+
+    // 獲取一個包含所有路由配置的陣列
+    console.log('allRoutes: ', router.getRoutes());
+  }
+
+  function addAdminRoutes() {
+    if (!router.hasRoute('About')) {
+      router.addRoute({
+        path: '/about',
+        name: 'About',
+        component: () => import('@/views/About.vue'),
+      });
+    }
+    // 2. 若重複添加相同 name 的路由，則會先刪除原路由，再添加新路由
+    router.addRoute({
+      path: '/admin',
+      name: 'Admin',
+      component: () => import('@/views/Admin.vue'),
+    });
+
+    // 紀錄刪除路由函數，方便切換權限時刪除路由
+    addRmRoutes(
+      // 添加巢狀路由
+      router.addRoute('Admin', {
+        path: '',
+        name: 'AdminInfo',
+        component: () => import('@/views/AdminInfo.vue'),
+      })
+    );
+    addRmRoutes(
+      router.addRoute('Admin', {
+        path: 'settings',
+        name: 'AdminSettings',
+        component: () => import('@/views/AdminSettings.vue'),
+      })
+    );
+
+    // 獲取一個包含所有路由配置的陣列
+    console.log('allRoutes: ', router.getRoutes());
+  }
+
+  onMounted(() => {
+    console.log('onMounted');
+    isAdmin.value ? addAdminRoutes() : addNormalRoutes();
+  });
+
+  function login() {
+    console.log('login');
+    localStorage.setItem('isAdmin', true);
+    isAdmin.value = true;
+    // 刪除路由
+    removeRoutes();
+    addAdminRoutes();
+    // 需要手動調用 router.replace() 來改變當前的位置顯示對應頁面
+    router.replace(router.currentRoute.value.fullPath);
+  }
+  function logout() {
+    console.log('logout');
+    localStorage.removeItem('isAdmin');
+    isAdmin.value = null;
+    // 刪除路由
+    removeRoutes();
+    addNormalRoutes();
+    // 需要手動調用 router.replace() 來改變當前的位置顯示對應頁面
+    router.replace(router.currentRoute.value.fullPath);
+  }
+  </script>
+
+  <template>
+    <h1>Hello Vue Router4!</h1>
+    <p><strong>Current route path:</strong> {{ $route.fullPath }}</p>
+    <button v-if="isAdmin" @click="logout">Admin Logout</button>
+    <button v-else @click="login">Admin Login</button>
+    <hr />
+
+    <nav>
+      <router-link to="/">Go to Home</router-link> |
+      <router-link to="/about">Go to About</router-link> |
+      <router-link to="/admin">Go to Admin</router-link>
+      <template v-if="isAdmin">
+        |
+        <router-link to="/admin/settings">Go to AdminSettings</router-link>
+      </template>
+    </nav>
+
+    <main>
+      <router-view />
+    </main>
+  </template>
+
+  <style scoped>
+  main {
+    margin-top: 5px;
+    padding: 10px;
+    background-color: lightblue;
+  }
+  </style>
+  ```
+
+- Admin.vue：
+
+  ```vue
+  <template>
+    <h2>Admin page</h2>
+    <section>
+      <router-view></router-view>
+    </section>
+  </template>
+
+  <style scoped>
+  section {
+    padding: 10px;
+    background-color: darkcyan;
+  }
+  </style>
+  ```
+
+- AdminInfo.vue：
+
+  ```vue
+  <template>
+    <h3>AdminInfo page</h3>
+  </template>
+  ```
+
+- AdminSettings.vue：
+
+  ```vue
+  <template>
+    <h3>AdminSettings page</h3>
+  </template>
+  ```
+
+- 渲染結果：
+
+  ![router-80.gif](./images/gif/router-80.gif)
