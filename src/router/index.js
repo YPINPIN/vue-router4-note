@@ -433,16 +433,6 @@ router.beforeEach((to, from) => {
   console.log('from:', from);
   // 取消當前的導航
   // return false;
-  // 一個路由地址(字串或物件)
-  if (!isAuthenticated() && to.name !== 'Login') {
-    window.alert('You need to Login.');
-    // 重新導向到登入頁
-    return { name: 'Login' };
-  } else {
-    // 不返回或返回 undefined、true
-    // return undefined;
-    // return true;
-  }
 
   // 設定 tab
   if (to.name === 'Home' && to.query.tab) {
@@ -452,6 +442,17 @@ router.beforeEach((to, from) => {
     currentTab.value !== sessionStorage.getItem('currentTab')
   ) {
     currentTab.set(sessionStorage.getItem('currentTab'));
+  }
+
+  // 一個路由地址(字串或物件)
+  if (!isAuthenticated() && to.name !== 'Login') {
+    window.alert('You need to Login.');
+    // 重新導向到登入頁
+    return { name: 'Login' };
+  } else {
+    // 不返回或返回 undefined、true
+    // return undefined;
+    // return true;
   }
 
   // 檢查路由是否需要授權
