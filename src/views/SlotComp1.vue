@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 const count = ref(0);
-defineExpose({ count, name });
+defineExpose({ count });
 </script>
 
 <template>

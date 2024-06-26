@@ -2427,6 +2427,7 @@ router.beforeEach((to, from) => {
     //...
     // 一個路由地址(字串或物件)
     if (!isAuthenticated() && to.name !== 'Login') {
+      window.alert('You need to Login.');
       // 重新導向到登入頁
       return { name: 'Login' };
     } else {
@@ -2884,6 +2885,9 @@ const routes = [
 ```vue
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const hasAuth = ref(localStorage.getItem('hasAuth'));
 
@@ -2894,6 +2898,7 @@ function setAuth() {
 function removeAuth() {
   localStorage.removeItem('hasAuth');
   hasAuth.value = null;
+  router.push('/comments');
 }
 </script>
 
@@ -3266,7 +3271,9 @@ import { ref } from 'vue';
 const comp = ref(null);
 
 function showCount() {
-  console.log('current count: ', comp.value.count);
+  if (comp.value) {
+    console.log('current count: ', comp.value.count);
+  }
 }
 </script>
 
@@ -3700,8 +3707,8 @@ const router = createRouter({
     // 相對 DOM 元素
     return {
       el: 'main',
-      // 滾動到 main 元素上方 10 px
-      top: 10,
+      // 滾動到 main 元素上方 250 px
+      top: 250,
     };
   },
 });

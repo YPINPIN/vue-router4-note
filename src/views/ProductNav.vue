@@ -10,7 +10,7 @@
   margin-right: 10px;
   padding: 10px;
   border: 1px solid black;
-  min-height: 50vh;
+  min-height: 70vh;
   display: flex;
   flex-direction: column;
 }

@@ -1,5 +1,8 @@
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const hasAuth = ref(localStorage.getItem('hasAuth'));
 
@@ -10,6 +13,7 @@ function setAuth() {
 function removeAuth() {
   localStorage.removeItem('hasAuth');
   hasAuth.value = null;
+  router.push('/comments');
 }
 </script>
 

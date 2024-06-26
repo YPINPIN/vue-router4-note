@@ -8,6 +8,8 @@ import {
 import Home from '@/views/Home.vue';
 // 全局控制 loading 狀態
 import { loading } from '@/utility/loading.js';
+// 全局控制 tab
+import { currentTab } from '@/utility/tabData.js';
 
 // 配置路由規則
 const routes = [
@@ -393,8 +395,8 @@ const router = createRouter({
     // 相對 DOM 元素
     // return {
     //   el: 'main',
-    //   // 滾動到 main 元素上方 10 px
-    //   top: 10,
+    //   // 滾動到 main 元素上方 250 px
+    //   top: 250,
     // };
     // 返回 savedPosition
     // if (savedPosition) {
@@ -433,12 +435,23 @@ router.beforeEach((to, from) => {
   // return false;
   // 一個路由地址(字串或物件)
   if (!isAuthenticated() && to.name !== 'Login') {
+    window.alert('You need to Login.');
     // 重新導向到登入頁
     return { name: 'Login' };
   } else {
     // 不返回或返回 undefined、true
     // return undefined;
     // return true;
+  }
+
+  // 設定 tab
+  if (to.name === 'Home' && to.query.tab) {
+    currentTab.set(to.query.tab);
+  } else if (
+    sessionStorage.getItem('currentTab') &&
+    currentTab.value !== sessionStorage.getItem('currentTab')
+  ) {
+    currentTab.set(sessionStorage.getItem('currentTab'));
   }
 
   // 檢查路由是否需要授權

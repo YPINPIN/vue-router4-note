@@ -3,7 +3,9 @@ import { ref } from 'vue';
 const comp = ref(null);
 
 function showCount() {
-  console.log('current count: ', comp.value.count);
+  if (comp.value) {
+    console.log('current count: ', comp.value.count);
+  }
 }
 </script>
 
