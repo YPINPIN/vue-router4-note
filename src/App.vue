@@ -40,6 +40,12 @@ watch(
 
 <template>
   <h1>Hello Vue Router4!</h1>
+  <a
+    href="https://github.com/YPINPIN/vue-router4-note?tab=readme-ov-file#vue-router-4-%E5%AD%B8%E7%BF%92%E7%AD%86%E8%A8%98"
+    target="_blank"
+    >Vue Router 4 筆記 📖</a
+  >
+  <span> | 點擊標題旁的 📖 可以對應到相關筆記。</span>
   <p><strong>Current route path:</strong> {{ $route.fullPath }}</p>
 
   <nav>
